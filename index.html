@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#087c73"><meta name="description" content="Tap-first PHC consultation prototype">
+<title>PHC Clinical Assistant V3.5 – Compact Professional Prescription</title>
+<style>
+:root{--teal:#087c73;--dark:#17383f;--muted:#6b8085;--line:#dce8e8;--bg:#f2f7f7;--soft:#e9f5f3;--red:#fff0ed;--amber:#fff5df}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--dark);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+header{position:sticky;top:0;z-index:5;background:white;border-bottom:1px solid var(--line);padding:12px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{display:flex;align-items:center;gap:10px}.logo{background:var(--teal);color:white;border-radius:13px;width:42px;height:42px;display:grid;place-items:center;font-size:25px}
+h1{font-size:16px;margin:0}.sub{font-size:11px;color:var(--muted)}main{max-width:760px;margin:auto;padding:14px 12px 92px}
+.card{background:white;border:1px solid var(--line);border-radius:17px;padding:15px;margin:12px 0;box-shadow:0 2px 8px #143b4208}
+h2{font-size:20px;margin:3px 0 8px}h3{font-size:15px;margin:0 0 10px}.muted{color:var(--muted);font-size:12px;line-height:1.5}
+button{font:inherit;cursor:pointer;border:1px solid #cbdada;background:white;color:var(--dark);border-radius:12px;padding:11px 13px}
+button.primary{background:var(--teal);color:white;border-color:var(--teal)}button.soft{background:var(--soft);border-color:#c8e5e0;color:#075f58}
+select,input,textarea{font:inherit}select{width:100%;padding:12px;border:1px solid #cbdada;border-radius:12px;background:white;color:var(--dark)}button:disabled{opacity:.45}.wide{width:100%}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.between{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.big{font-size:18px;font-weight:750}.tag{font-size:11px;border-radius:20px;background:var(--soft);color:#08665e;padding:5px 9px;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.tile{min-height:48px;text-align:left;display:flex;align-items:center;gap:9px;padding:11px;background:#fbfdfd}
+.tile.selected{background:#dff2ee;border:2px solid var(--teal);padding:10px}.tile .tick{width:20px;height:20px;border:1.5px solid #91a7a8;border-radius:6px;display:grid;place-items:center;flex:none}.tile.selected .tick{background:var(--teal);color:white;border-color:var(--teal)}
+.action{min-height:62px;display:flex;align-items:center;justify-content:space-between;text-align:left;width:100%;margin:7px 0;background:white}.action strong{display:block}.action small{color:var(--muted)}
+.progress{height:7px;background:#e5eeee;border-radius:10px;overflow:hidden}.progress span{display:block;height:100%;background:var(--teal);width:0}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:7px 4px calc(7px + env(safe-area-inset-bottom));z-index:8}
+.bottom button{border:0;background:transparent;padding:7px 8px;font-size:11px;color:var(--muted);display:grid;gap:3px;justify-items:center}.bottom button.active{color:var(--teal);font-weight:800}.bottom span{font-size:19px}
+.modalback{position:fixed;inset:0;background:#102b30a8;z-index:20;display:none;align-items:flex-end;justify-content:center}.modalback.open{display:flex}.modal{background:white;width:min(760px,100%);max-height:88dvh;overflow:auto;border-radius:22px 22px 0 0;padding:18px 15px calc(22px + env(safe-area-inset-bottom))}
+.modalhead{display:flex;justify-content:space-between;align-items:center;position:sticky;top:-18px;background:white;padding:4px 0 12px;z-index:2}
+.optionrow{display:flex;gap:7px;flex-wrap:wrap}.chip{border-radius:30px;padding:10px 13px;background:#f5f9f9}.chip.on{background:#dff2ee;border:1.5px solid var(--teal);color:#075f58;font-weight:700}
+.field{margin:12px 0}.field label{font-size:12px;font-weight:700;display:block;margin-bottom:6px}input,textarea,select{font:inherit;width:100%;padding:12px;border:1px solid #cbdada;border-radius:11px;background:white;color:var(--dark)}textarea{min-height:70px}
+.notice{padding:11px;border-radius:12px;background:var(--amber);font-size:12px;line-height:1.5;margin:10px 0}.danger{background:var(--red);border-left:4px solid #c34232}.summaryline{padding:10px 0;border-bottom:1px solid #edf2f2;font-size:13px}.hidden{display:none!important}
+/* v3.5 compact, legible hospital prescription typography */
+#prescriptionPreview{background:#fff;color:#202a32;padding:20px 22px;border:1px solid #d7e0e7;border-radius:8px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.32;max-width:100%;box-shadow:0 2px 9px #183b4a0b}
+.rx-head{text-align:center;padding:0 0 8px;border-bottom:1.5px solid #285d7d;margin-bottom:7px}
+.rx-head h2{font-size:19px;letter-spacing:.1px;margin:0 0 2px;color:#174f75;font-weight:700}
+.rx-head .rx-sub{font-size:10px;color:#4a5964}
+.rx-title{font-size:14px;font-weight:700;letter-spacing:.35px;color:#174f75;text-align:center;margin:7px 0 8px;padding:3px 0 5px;border-bottom:1px solid #cbd8df}
+.rx-meta{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;border:1px solid #d8e1e8;background:#fbfcfd;border-radius:4px;padding:5px 9px;margin:0 0 8px;font-size:11px}
+.rx-meta div{display:grid;grid-template-columns:minmax(88px,35%) 1fr;gap:5px;padding:3px 0;border-bottom:1px solid #e9eef1;min-width:0}
+.rx-meta div:nth-last-child(-n+2){border-bottom:0}
+.rx-meta b{color:#344957;font-weight:700}
+.rx-meta span{overflow-wrap:anywhere;color:#182832}
+.rx-section{margin:6px 0 7px;font-size:11.5px;line-height:1.32;break-inside:avoid}
+.rx-section h3{font-size:9.5px;letter-spacing:.35px;color:#285d7d;margin:0 0 3px;padding-bottom:2px;border-bottom:1px solid #dce5ea;text-transform:uppercase;font-weight:700}
+.rx-section>div{overflow-wrap:anywhere}
+.rx-medicine{padding:4px 6px 4px 8px;border-bottom:1px solid #e1e8ed;font-size:11.5px;line-height:1.3;break-inside:avoid}
+.rx-medicine:nth-child(odd){background:#fafcfd}
+.rx-medicine b{color:#172f3e;font-weight:700}
+.rx-sign{display:flex;justify-content:space-between;gap:20px;margin-top:18px;padding-top:7px;border-top:1px solid #aebdc7;font-size:10.5px}
+.rx-sign>div{min-width:42%}
+.rx-muted{color:#52636d;font-size:10px}
+#printout{display:none}
+@media print{
+ @page{size:A4 portrait;margin:12mm}
+ html,body{background:#fff!important;color:#111!important}
+ body *{visibility:hidden!important}
+ #printout,#printout *{visibility:visible!important}
+ #printout{display:block!important;position:absolute;left:0;top:0;width:100%;padding:0;border:0}
+ header,.bottom,.modalback,main{display:none!important}
+ #printPrescriptionContent #prescriptionPreview{border:0;border-radius:0;box-shadow:none;padding:0;font-size:11.5px;max-width:none}
+ .rx-head h2{font-size:18px}
+ .rx-section,.rx-meta,.rx-medicine,.rx-sign{break-inside:avoid}
+ .rx-section{margin:5px 0 6px}
+ .rx-sign{margin-top:18px}
+}
+@media(max-width:480px){
+ #prescriptionPreview{padding:14px}
+ .rx-meta{gap:0 10px;padding:5px 7px}
+ .rx-meta div{grid-template-columns:1fr;gap:1px}
+ .rx-meta div:nth-last-child(-n+2){border-bottom:1px solid #e9eef1}
+ .rx-meta div:last-child{border-bottom:0}
+}
+
+@media(min-width:650px){main{padding-top:22px}.modalback{align-items:center}.modal{border-radius:20px;max-height:82vh}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style></head>
+<body>
+<header><div class="brand"><div class="logo">✚</div><div><h1>PHC Clinical Assistant</h1><div class="sub">Tap-first OPD · Version 3.6 · stable medicine identity independent of catalogue codes · corrected issue quantity + village on prescription · ICD search + quick medicines, expanded ICD-10 and structured examination · dynamic stock-linked catalogue</div></div></div><span class="tag">Offline ready</span></header>
+<main id="home">
+  <section class="card">
+    <div class="tag">CLINICAL WORKSPACE</div><h2>Quick OPD</h2>
+    <p class="muted">Tap to record routine consultation details. Typing is optional except where an exact value or unusual finding is needed.</p>
+    <button class="primary wide" onclick="startConsult()">＋ Start new consultation</button>
+    <div class="grid" style="margin-top:10px">
+      <div class="card"><div class="muted">Today's demo consultations</div><div class="big" id="todayCount">0</div></div>
+      <div class="card"><div class="muted">Saved on this device</div><div class="big" id="totalCount">0</div></div>
+    </div>
+  </section>
+  <section class="card"><h3>Current consultation</h3><div id="homeSummary" class="muted">No consultation started.</div></section>
+  <section class="card"><h3>Recent records</h3><div id="recent" class="muted">No saved demo records.</div></section>
+  <section class="notice">Prototype for fictitious/test data only. Not clinically validated, not an autonomous diagnostic or triage device, and does not prescribe. Clinician must assess the patient, verify all suggestions and follow current national/state protocols. Do not enter identifiable patient information.</section>
+</main>
+
+<main id="consult" class="hidden">
+  <div class="between"><div><div class="tag">QUICK OPD</div><h2>Consultation</h2></div><button onclick="go('home')">Close ✕</button></div>
+  <div class="card">
+    <div class="between"><h3>1. Patient basics</h3><button class="soft" onclick="openModal('patient')">Edit / Select</button></div>
+    <div id="patientSummary" class="muted">Age group and sex not selected.</div>
+  </div>
+  <div class="card">
+    <div class="between"><h3>2. Chief complaints</h3><button class="soft" onclick="openModal('complaints')">＋ Select complaints</button></div>
+    <div id="complaintSummary" class="muted">No complaint selected.</div>
+  </div>
+  <div class="card">
+    <div class="between"><h3>3. History</h3><button class="soft" onclick="openModal('history')">＋ Tap history</button></div>
+    <div id="historySummary" class="muted">Select complaint-specific history.</div>
+  </div>
+  <div class="card">
+    <div class="between"><h3>4. Vitals</h3><button class="soft" onclick="openModal('vitals')">＋ Record vitals</button></div>
+    <div id="vitalsSummary" class="muted">No vitals recorded.</div>
+  </div>
+  <div class="card">
+    <div class="between"><h3>5. Examination</h3><button class="soft" onclick="openModal('exam')">＋ Examination</button></div>
+    <div id="examSummary" class="muted">Not documented.</div>
+  </div>
+  <div class="card">
+    <div class="between"><h3>6. Clinical assessment</h3><button class="soft" onclick="openModal('assessment')">Review options</button></div>
+    <div id="assessmentSummary" class="muted">Differential prompts appear after history and vitals. Final diagnosis is selected by MO.</div>
+    <div id="alerts"></div>
+  </div>
+  <div class="card">
+    <div class="between"><h3>7. Plan / follow-up</h3><button class="soft" onclick="openModal('plan')">＋ Add plan</button></div>
+    <div id="planSummary" class="muted">MO-entered plan not recorded.</div>
+  </div>
+  <div class="card">
+    <div class="progress"><span id="completion"></span></div><p class="muted" id="completionText">0 of 7 sections recorded</p>
+    <div class="row"><button class="primary" onclick="saveConsult()">Save consultation</button><button onclick="previewNote()">Preview note</button></div>
+  </div>
+</main>
+
+<main id="patients" class="hidden"><section class="card"><h2>Patients / Records</h2><p class="muted">Local demo records on this device.</p><div id="allRecords"></div><button class="soft" onclick="exportData()">Export backup (JSON)</button></section></main>
+<main id="reports" class="hidden"><section class="card"><h2>Reports</h2><div id="reportSummary" class="muted">No records yet.</div><button class="soft" onclick="exportData()">Export records</button></section></main>
+<main id="inventory" class="hidden"><section class="card"><div class="between"><h2>Stock management</h2><span class="tag">Local inventory</span></div><p class="muted">Upload the latest stock report as CSV or JSON. PHC Parite and Solapur DHO are kept as separate stock locations. DHO stock is a reference catalogue and is not treated as physically available at PHC until received through a transfer entry.</p><div class="field"><label>Stock source</label><select id="stockSource"><option value="PHC Parite">PHC Parite</option><option value="Solapur DHO">Solapur DHO</option></select></div><div class="field"><label>Upload stock file (CSV / JSON)</label><input id="stockFile" type="file" accept=".csv,.txt,.json,text/csv,application/json"></div><button class="primary wide" onclick="importStockFile()">Upload and preview stock</button><div id="stockPreview" class="muted" style="margin-top:10px">No file selected.</div><div class="notice">PDF import is not enabled in this offline build. Export the stock report to CSV/Excel (CSV format) before uploading. Use the included CSV template. Quantities are updated only after preview confirmation.</div><button class="soft wide" onclick="downloadStockTemplate()">Download stock CSV template</button></section><section class="card"><div class="between"><h3>Inventory overview</h3><button onclick="renderInventory()">Refresh</button></div><div id="inventorySummary"></div><div class="field"><label>Search inventory</label><input id="inventorySearch" placeholder="Search generic, strength or item code" oninput="renderInventoryList()"></div><div id="inventoryList"></div></section><section class="card"><h3>Stock movements</h3><p class="muted">Prescription saving deducts the entered order quantity from PHC Parite stock once. Subsequent edits to an already saved consultation do not deduct again. Review and reconcile physical stock regularly.</p><div id="movementList"></div><button class="soft wide" onclick="exportInventory()">Export inventory + movements backup</button><div class="field"><label>Restore inventory backup</label><input type="file" accept="application/json" onchange="restoreInventory(event)"></div></section></main>
+<main id="settings" class="hidden"><section class="card"><h2>Settings & backup</h2><p class="muted">Local-first demo storage. No cloud sync or encryption in this prototype.</p><button class="wide" onclick="exportData()">Export JSON backup</button><div class="field"><label>Import backup</label><input type="file" id="importFile" accept="application/json" onchange="importData(event)"></div><button class="wide" onclick="clearDemo()">Delete all demo records</button></section></main>
+
+<nav class="bottom">
+<button class="active" data-tab="home" onclick="go('home')"><span>⌂</span>Home</button>
+<button data-tab="consult" onclick="go('consult')"><span>＋</span>OPD</button>
+<button data-tab="patients" onclick="go('patients')"><span>♙</span>Patients</button>
+<button data-tab="reports" onclick="go('reports')"><span>▤</span>Reports</button>
+<button data-tab="inventory" onclick="go('inventory')"><span>▦</span>Stock</button>
+<button data-tab="settings" onclick="go('settings')"><span>⚙</span>Settings</button>
+</nav>
+
+<div class="modalback" id="modalback" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modalhead"><h2 id="modalTitle">Select</h2><button onclick="closeModal()">✕</button></div><div id="modalBody"></div><div class="row" style="margin-top:16px"><button class="primary" onclick="applyModal()">Done</button><button onclick="closeModal()">Cancel</button></div></div></div>
+<div class="modalback" id="noteBack" onclick="if(event.target===this)this.classList.remove('open')"><div class="modal"><div class="modalhead"><h2>Prescription preview</h2><button onclick="document.getElementById('noteBack').classList.remove('open')">✕</button></div><label class="row" style="font-weight:700;margin:8px 0 14px"><input id="withoutHeader" type="checkbox" style="width:auto" onchange="renderPrescriptionPreview()"> Without Header</label><div id="prescriptionPreview"></div><div class="row" style="margin-top:14px"><button class="primary" style="flex:1" onclick="printPrescription()">Print prescription</button><button style="flex:1" onclick="document.getElementById('noteBack').classList.remove('open')">Close</button></div></div></div><div id="printout"><div id="printPrescriptionContent"></div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+// Storage wrapper: use persistent localStorage when allowed; fall back to in-memory storage
+// on file:// origins or browsers that block site storage. In-memory data lasts until tab closes.
+const __memoryStore = Object.create(null);
+const __store = {
+  getItem(key) { try { const v = window.localStorage.getItem(key); if (v !== null) return v; } catch (e) {} return Object.prototype.hasOwnProperty.call(__memoryStore,key) ? __memoryStore[key] : null; },
+  setItem(key,value) { const v=String(value); __memoryStore[key]=v; try { window.localStorage.setItem(key,v); } catch (e) {} },
+  removeItem(key) { delete __memoryStore[key]; try { window.localStorage.removeItem(key); } catch (e) {} }
+};
+const blank=()=>({patient:{name:'',fatherSpouse:'',crNo:'',mobile:'',ageGroup:'',sex:'',age:'',village:'',villageOther:'',pregnancy:''},complaints:[],history:{},vitals:{},exam:{status:'',items:[]},assessment:{},plan:{}});
+let current=blank(), modalKind='';
+const DBKEY='phc_tapfirst_records_v26';
+const INVKEY='phc_parite_inventory_v29'; const MOVKEY='phc_parite_stock_movements_v29';
+function records(){try{return JSON.parse(__store.getItem(DBKEY)||'[]')}catch(e){return[]}}
+function persist(a){__store.setItem(DBKEY,JSON.stringify(a))}
+function go(tab){['home','consult','patients','reports','inventory','settings'].forEach(x=>$(x).classList.toggle('hidden',x!==tab));document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='home')refreshHome();if(tab==='patients')renderRecords();if(tab==='reports')renderReports();if(tab==='inventory')renderInventory()}
+function startConsult(){current=blank();render();go('consult')}
+const DX_CATALOG=[["Acute febrile illness, unspecified", "R50.9"], ["Malaria, unspecified", "B54"], ["Dengue fever", "A90"], ["Chikungunya", "A92.0"], ["Acute upper respiratory infection, unspecified", "J06.9"], ["Acute pharyngitis, unspecified", "J02.9"], ["Acute tonsillitis, unspecified", "J03.9"], ["Acute bronchitis, unspecified", "J20.9"], ["Pneumonia, unspecified organism", "J18.9"], ["Asthma, unspecified", "J45.9"], ["Acute gastroenteritis / diarrhoea, presumed infectious", "A09"], ["Gastritis, unspecified", "K29.7"], ["Dyspepsia", "K30"], ["Urinary tract infection, site not specified", "N39.0"], ["Acute cystitis", "N30.0"], ["Acute pyelonephritis", "N10"], ["Headache, unspecified", "R51.9"], ["Migraine, unspecified", "G43.9"], ["Dizziness and giddiness", "R42"], ["Syncope and collapse", "R55"], ["Essential hypertension", "I10"], ["Type 2 diabetes mellitus without complications", "E11.9"], ["Low back pain", "M54.5"], ["Pain in joint", "M25.5"], ["Dermatitis, unspecified", "L30.9"], ["Allergic urticaria", "L50.9"], ["Iron deficiency anaemia, unspecified", "D50.9"], ["Anaemia, unspecified", "D64.9"], ["Acute conjunctivitis, unspecified", "H10.3"], ["Otitis media, unspecified", "H66.9"], ["Dental caries, unspecified", "K02.9"], ["Wound, unspecified", "T14.1"], ["Animal bite, unspecified", "T14.1"], ["Burn, unspecified", "T30.0"], ["Jaundice, unspecified", "R17"], ["Nausea and vomiting", "R11.2"], ["Abdominal pain, unspecified", "R10.9"], ["Other symptoms and signs involving the circulatory system / oedema", "R60.9"], ['Acute pharyngitis, unspecified', 'J02.9'], ['Acute tonsillitis, unspecified', 'J03.90'], ['Acute cystitis', 'N30.0'], ['Cellulitis, unspecified', 'L03.90'], ['Scabies', 'B86'], ['Acute gastroenteritis, unspecified', 'K52.9'], ['Diarrhoea, unspecified', 'R19.7'], ['Gastritis, unspecified', 'K29.7'], ['Dyspepsia', 'K30'], ['Vomiting, unspecified', 'R11.10'], ['Nausea with vomiting', 'R11.2'], ['Constipation', 'K59.0'], ['Gastro-oesophageal reflux disease without oesophagitis', 'K21.9'], ['Helminthiasis, unspecified', 'B82.9'], ['Anorexia / loss of appetite', 'R63.0'], ['Weakness', 'R53.1'], ['Malaise and fatigue', 'R53.83'], ['Dehydration', 'E86.0'], ['Volume depletion, unspecified', 'E86.9'], ['Orthostatic hypotension', 'I95.1'], ['Hypotension, unspecified', 'I95.9'], ['Myalgia', 'M79.1'], ['Pain, unspecified (body ache)', 'R52'], ['Nutritional deficiency, unspecified', 'E63.9'], ['Vitamin B12 deficiency', 'E53.8'], ['Vitamin D deficiency, unspecified', 'E55.9'], ['Hypoglycaemia, unspecified', 'E16.2'], ['Hyperglycaemia, unspecified', 'R73.9'], ['Hypo-osmolality and hyponatraemia', 'E87.1'], ['Hypokalaemia', 'E87.6'], ['Hypertensive urgency', 'I16.0'], ['Chronic ischaemic heart disease, unspecified', 'I25.9'], ['Angina pectoris, unspecified', 'I20.9'], ['Heart failure, unspecified', 'I50.9'], ['Palpitations', 'R00.2'], ['Localized oedema / pedal oedema', 'R60.0'], ['Type 2 diabetes mellitus with hyperglycaemia', 'E11.65'], ['Type 1 diabetes mellitus without complications', 'E10.9'], ['Type 2 diabetes mellitus with diabetic neuropathy', 'E11.40'], ['Obesity, unspecified', 'E66.9'], ['Hypothyroidism, unspecified', 'E03.9'], ['Asthma with acute exacerbation', 'J45.901'], ['Asthma, uncomplicated', 'J45.909'], ['COPD, unspecified', 'J44.9'], ['COPD with acute exacerbation', 'J44.1'], ['Dyspnoea, unspecified', 'R06.00'], ['Cough, unspecified', 'R05.9'], ['Tension-type headache', 'G44.209'], ['Epilepsy, unspecified', 'G40.909'], ['Simple febrile convulsions', 'R56.00'], ['Low back pain, unspecified', 'M54.50'], ['Spondylosis, lumbar region', 'M47.816'], ['Spondylosis, cervical region', 'M47.812'], ['Osteoarthritis of knee', 'M17.9'], ['Sciatica, unspecified side', 'M54.30'], ['Pain in unspecified joint (arthralgia)', 'M25.50'], ['Calculus of kidney', 'N20.0'], ['Retention of urine, unspecified', 'R33.9'], ['Benign prostatic hyperplasia', 'N40.0'], ['Acute vaginitis', 'N76.0'], ['Dysmenorrhoea, unspecified', 'N94.6'], ['Cutaneous abscess', 'L02.91'], ['Open wound of unspecified body region', 'T14.1'], ['Allergy, unspecified', 'T78.40'], ['Urticaria, unspecified', 'L50.9'], ['Acute conjunctivitis, unspecified', 'H10.3'], ['Otitis media, unspecified', 'H66.9'], ['Dental caries', 'K02.9'], ['Burn, unspecified', 'T30.0'], ['Jaundice, unspecified', 'R17'], ['Animal bite / exposure', 'W54.0XXA']];
+let MED_CATALOG=[["Adrenaline 1 mg/mL injection", "MO to enter/confirm per patient and current protocol", "Injection", "MO to select", "Emergency protocol only; anaphylaxis first-line treatment is IM adrenaline per current protocol.", "PHC Parite", 20, "ampoules"], ["Amlodipine 5 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Confirm hypertension and BP; individualise and monitor.", "PHC Parite", 4500, "tablets"], ["Amoxicillin 250 mg capsule", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Check allergy, age/weight, renal function and bacterial indication.", "PHC Parite", 3000, "capsules"], ["Amoxicillin 500 mg capsule", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Check allergy, renal function and bacterial indication.", "PHC Parite", 1800, "capsules"], ["Amoxicillin + clavulanic acid 500/125 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Check allergy, renal function and bacterial indication; antibiotic stewardship.", "PHC Parite", 700, "tablets"], ["Anti-rabies vaccine (human tissue culture) 1 mL", "MO to enter/confirm per patient and current protocol", "IM", "MO to select", "Follow current national rabies PEP schedule; assess wound and immunoglobulin need.", "PHC Parite", 30, "vials"], ["Anti-snake venom serum 10 mL", "MO to enter/confirm per patient and current protocol", "IV", "MO to select", "Emergency protocol only; systemic envenomation assessment, monitoring and referral.", "PHC Parite", 2, "vials"], ["Atropine 0.6 mg/mL injection", "MO to enter/confirm per patient and current protocol", "Injection", "MO to select", "Emergency indication-specific; monitor and follow protocol.", "PHC Parite", 50, "ampoules"], ["Azithromycin 250 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Defined bacterial indication only; QT risk and interactions.", "PHC Parite", 960, "tablets"], ["Azithromycin 500 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Defined bacterial indication only; QT risk and interactions.", "PHC Parite", 600, "tablets"], ["Calcium carbonate + vitamin D3 tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Verify elemental calcium/vitamin D strength and indication.", "PHC Parite", 12300, "tablets"], ["Cefotaxime 1 g injection", "MO to enter/confirm per patient and current protocol", "IV/IM", "MO to select", "Serious bacterial infection only; allergy check and protocol.", "PHC Parite", 200, "vials"], ["Cetirizine 10 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "May cause drowsiness; adjust for renal impairment.", "PHC Parite", 6400, "tablets"], ["Ciprofloxacin eye/ear drops 5 mL", "MO to enter/confirm per patient and current protocol", "Ophthalmic/otic", "MO to select", "Confirm site and diagnosis; use product-specific directions.", "PHC Parite", 150, "bottles"], ["Diphenhydramine + ammonium chloride + sodium citrate + menthol expectorant", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Combination cough syrup; sedation and paediatric age restrictions; check product label.", "PHC Parite", 300, "bottles"], ["Dextrose 5% with normal saline IV 500 mL", "MO to enter/confirm per patient and current protocol", "IV", "MO to select", "Fluid prescription based on clinical assessment and monitoring.", "PHC Parite", 24, "bottles"], ["Diclofenac 1% gel 30 g", "MO to enter/confirm per patient and current protocol", "Topical", "MO to select", "External use; avoid broken skin and check NSAID precautions.", "PHC Parite", 100, "tubes"], ["Diclofenac sodium 25 mg/mL injection", "MO to enter/confirm per patient and current protocol", "IM", "MO to select", "Use only when indicated; GI, renal and cardiovascular precautions.", "PHC Parite", 250, "ampoules"], ["Diclofenac sodium 50 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Lowest effective dose/shortest duration; avoid contraindications.", "PHC Parite", 25500, "tablets"], ["Dicyclomine 10 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Anticholinergic precautions; assess acute abdomen before use.", "PHC Parite", 3000, "tablets"], ["Domperidone 10 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "QT/arrhythmia risk; lowest effective dose and short duration only.", "PHC Parite", 3000, "tablets"], ["Doxycycline 100 mg capsule", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Avoid in pregnancy; indication-specific antimicrobial use.", "PHC Parite", 900, "capsules"], ["Fluconazole 150 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Confirm fungal indication; check pregnancy, liver disease and interactions.", "PHC Parite", 200, "tablets"], ["Folic acid 5 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Use according to anaemia/pregnancy indication and programme protocol.", "PHC Parite", 3000, "tablets"], ["Glimepiride 2 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Hypoglycaemia risk; individualise with meals, renal function and glucose.", "PHC Parite", 375, "tablets"], ["Hydrocortisone sodium succinate 100 mg injection", "MO to enter/confirm per patient and current protocol", "IV/IM", "MO to select", "Emergency/defined steroid indication only; protocol and monitoring.", "PHC Parite", 5, "vials"], ["Iron sucrose 50 mg/2.5 mL injection", "MO to enter/confirm per patient and current protocol", "IV", "MO to select", "Calculate iron deficit; check indication and monitor for hypersensitivity.", "PHC Parite", 50, "ampoules"], ["Normal saline 0.9% IV 500 mL", "MO to enter/confirm per patient and current protocol", "IV", "MO to select", "Fluid plan based on hydration, cardiac/renal status and monitoring.", "PHC Parite", 25, "bottles"], ["Metformin 500 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Confirm diabetes and eGFR; individualise and monitor tolerance.", "PHC Parite", 4000, "tablets"], ["Metronidazole 500 mg/100 mL IV", "MO to enter/confirm per patient and current protocol", "IV", "MO to select", "Only for supported anaerobic/protozoal indication; check interactions.", "PHC Parite", 10, "bottles"], ["ORS WHO formula 20.5 g sachet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Dilute in exact water volume printed on sachet; assess dehydration.", "PHC Parite", 1200, "sachets"], ["Pantoprazole 40 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Use for an established indication; review duration.", "PHC Parite", 2000, "tablets"], ["Paracetamol 500 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Check weight, liver disease and total daily dose including combination products.", "PHC Parite", 8000, "tablets"], ["Pheniramine maleate 22.75 mg/2 mL injection", "MO to enter/confirm per patient and current protocol", "IM/IV", "MO to select", "Sedation/hypotension risk; not a substitute for adrenaline in anaphylaxis.", "PHC Parite", 100, "ampoules"], ["Povidone iodine 7.5% scrub", "MO to enter/confirm per patient and current protocol", "Topical", "MO to select", "Skin preparation use; not for eyes/mucosa.", "PHC Parite", 2, "bottles"], ["Povidone iodine 5% solution", "MO to enter/confirm per patient and current protocol", "Topical", "MO to select", "External use; verify site suitability.", "PHC Parite", 1, "bottles"], ["Ranitidine 150 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Verify current regulatory/formulary status before prescribing.", "PHC Parite", 12000, "tablets"], ["IFA tablet (iron 60 mg + folic acid 500 mcg)", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Follow current national anaemia programme schedule.", "PHC Parite", 28000, "tablets"], ["Levocetirizine 5 mg tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "May cause drowsiness; renal adjustment may be needed.", "PHC Parite", 15000, "tablets"], ["Vitamin B-complex tablet", "MO to enter/confirm per patient and current protocol", "Oral", "MO to select", "Use only for an appropriate indication; verify formulation.", "PHC Parite", 9000, "tablets"]];
+
+function invLoad(){try{return JSON.parse(__store.getItem(INVKEY)||'null')}catch(e){return null}}
+function invSave(x){__store.setItem(INVKEY,JSON.stringify(x))}
+function movements(){try{return JSON.parse(__store.getItem(MOVKEY)||'[]')}catch(e){return []}}
+function saveMovements(x){__store.setItem(MOVKEY,JSON.stringify(x))}
+function initInventory(){let db=invLoad();if(!db){db={'PHC Parite':MED_CATALOG.map((m,i)=>({id:'PHC-'+i,name:m[0],strength:'',form:m[2],quantity:Number(m[6])||0,unit:m[7]||'units',itemCode:'',source:'PHC Parite',active:true,updatedAt:'Historical baseline 19-Aug-2024',batches:[]})),'Solapur DHO':[]};invSave(db)}syncMedCatalog()}
+function syncMedCatalog(){let db=invLoad()||{},phc=db['PHC Parite']||[];MED_CATALOG=phc.filter(x=>x.active!==false).map(x=>[x.name,'MO to enter/confirm per patient and current protocol',x.form||'Other','MO to select','Verify indication, patient factors, contraindications, interactions and current protocol.',x.source||'PHC Parite',x.quantity||0,x.unit||'units',x.id]);}
+function csvParse(t){let rows=[],row=[],v='',q=false;for(let i=0;i<t.length;i++){let c=t[i];if(c==='"'&&q&&t[i+1]==='"'){v+='"';i++}else if(c==='"')q=!q;else if(c===','&&!q){row.push(v.trim());v=''}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&t[i+1]==='\n')i++;row.push(v.trim());if(row.some(x=>x!==''))rows.push(row);row=[];v=''}else v+=c}row.push(v.trim());if(row.some(x=>x!==''))rows.push(row);if(!rows.length)return[];let h=rows.shift().map(x=>x.toLowerCase().replace(/[^a-z0-9]+/g,''));return rows.map(r=>Object.fromEntries(h.map((k,i)=>[k,r[i]||''])))}
+function medicineIdentityKey(x){
+ const raw=[x.name||'',x.strength||'',x.form||''].join(' ').toLowerCase();
+ const n=raw.replace(/cetrizine/g,'cetirizine').replace(/amoxycillin/g,'amoxicillin').replace(/amlodepine/g,'amlodipine').replace(/[^a-z0-9]+/g,' ').trim();
+ const groups=[
+  [/\b(paracetamol)\b/,'paracetamol'],[/\b(cetirizine)\b/,'cetirizine'],[/\b(amlodipine)\b/,'amlodipine'],[/\b(metformin)\b/,'metformin'],[/\b(amoxicillin)\b/,'amoxicillin'],[/\b(omeprazole)\b/,'omeprazole'],[/\b(diclofenac)\b/,'diclofenac'],[/\b(ors|oral rehydration salt)\b/,'ors'],[/\b(anti rabies vaccine)\b/,'anti rabies vaccine']
+ ];
+ for(const [re,label] of groups)if(re.test(n))return label+'|'+(n.match(/\b\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|iu|%)\b/)||[''])[0].replace(/\s+/g,'')+'|'+(n.includes('syrup')?'syrup':n.includes('capsule')||n.includes('cap ')?'capsule':n.includes('tablet')||n.includes(' tab ')?'tablet':n.includes('injection')||n.includes('vaccine')?'injection':n.includes('gel')?'gel':n.includes('sachet')?'sachet':n.includes('drop')?'drops':'');
+ return n;
+}
+function importStockFile(){let f=$('stockFile').files[0],srcName=$('stockSource').value;if(!f){alert('Choose a CSV or JSON stock file first.');return}let reader=new FileReader();reader.onload=()=>{try{let rows;if(f.name.toLowerCase().endsWith('.json')){let j=JSON.parse(reader.result);rows=Array.isArray(j)?j:(j.items||j.stock||[])}else rows=csvParse(reader.result);if(!rows.length)throw Error('No stock rows found.');let norm=rows.map((r,i)=>{let g={};Object.keys(r).forEach(k=>g[k.toLowerCase().replace(/[^a-z0-9]+/g,'')]=r[k]);let name=g.name||g.itemname||g.medicinename||g.item||'';let qty=g.quantity||g.activeqty||g.totalinhandqty||g.stock||'';let unit=g.unit||g.itemtype||g.form||'units';if(!name||qty==='')return null;let item={name:String(name).trim(),strength:String(g.strength||''),form:String(g.form||g.itemtype||'')};return {id:'MED-'+medicineIdentityKey(item),...item,quantity:Math.max(0,Number(String(qty).replace(/,/g,''))||0),unit:String(unit),itemCode:String(g.itemcode||g.code||''),source:srcName,active:true,updatedAt:new Date().toISOString(),batch:String(g.batch||g.batchno||''),expiry:String(g.expiry||g.expirydate||'')}}).filter(Boolean);if(!norm.length)throw Error('No valid rows. Required columns: name and quantity.');window.pendingStock={source:srcName,items:norm};$('stockPreview').innerHTML=`<b>${norm.length} valid rows found for ${srcName}.</b><br>${norm.slice(0,8).map(x=>`${escapeHtml(x.name)} — ${x.quantity} ${escapeHtml(x.unit)}`).join('<br>')}<br><button class="primary wide" style="margin-top:10px" onclick="confirmStockImport()">Confirm and update ${srcName} stock</button>`}catch(e){alert('Import failed: '+e.message)}};reader.readAsText(f)}
+function confirmStockImport(){let p=window.pendingStock;if(!p)return;let db=invLoad()||{'PHC Parite':[],'Solapur DHO':[]},old=db[p.source]||[],map=new Map(old.map(x=>[medicineIdentityKey(x),x]));p.items.forEach(n=>{let k=medicineIdentityKey(n),prev=map.get(k);map.set(k,{...(prev||{}),...n,id:(prev&&prev.id)||('MED-'+k)});});db[p.source]=Array.from(map.values());db.lastUpload={source:p.source,date:new Date().toISOString(),count:p.items.length};invSave(db);window.pendingStock=null;syncMedCatalog();$('stockPreview').textContent='Stock updated successfully. OPD catalogue refreshed.';renderInventory();alert('Stock catalogue updated locally.');}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function renderInventory(){let db=invLoad()||{},phc=db['PHC Parite']||[],dho=db['Solapur DHO']||[];$('inventorySummary').innerHTML=`<div class="grid"><div class="card"><b>PHC Parite</b><div class="big">${phc.length}</div><small>Catalogue items</small></div><div class="card"><b>Solapur DHO</b><div class="big">${dho.length}</div><small>Reference items</small></div></div><p class="muted">Last upload: ${db.lastUpload?new Date(db.lastUpload.date).toLocaleString():'No upload recorded'}</p>`;renderInventoryList();$('movementList').innerHTML=movements().slice(-12).reverse().map(m=>`<div class="summaryline">${escapeHtml(m.date)} · ${escapeHtml(m.name)} · −${m.quantity} ${escapeHtml(m.unit)} · ${escapeHtml(m.consultId)}</div>`).join('')||'No stock movements recorded.'}
+function renderInventoryList(){let db=invLoad()||{},q=($('inventorySearch')?.value||'').toLowerCase(),all=[...(db['PHC Parite']||[]),...(db['Solapur DHO']||[])];$('inventoryList').innerHTML=all.filter(x=>(x.name+' '+x.itemCode+' '+x.form).toLowerCase().includes(q)).slice(0,150).map(x=>`<div class="summaryline"><b>${escapeHtml(x.name)}</b><br>${escapeHtml(x.source)} · ${escapeHtml(x.quantity)} ${escapeHtml(x.unit)} · ${escapeHtml(x.form||'form not specified')} ${x.itemCode?'· Code '+escapeHtml(x.itemCode):''}<br><span class="muted">${x.active===false?'Inactive':'Active'} · Updated ${escapeHtml(x.updatedAt||'unknown')}</span></div>`).join('')||'No matching stock items.'}
+function downloadStockTemplate(){let t='item_code,name,strength,form,quantity,unit,batch,expiry\n163.2,Amlodipine,5 mg,Tablet,4500,tablets,,\n41.3,Paracetamol,500 mg,Tablet,8000,tablets,,\n';let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='PHC_stock_upload_template.csv';a.click();URL.revokeObjectURL(a.href)}
+function exportInventory(){let data={app:'PHC Clinical Assistant',version:'3.1',inventory:invLoad(),movements:movements()};let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='PHC_inventory_backup_v31.json';a.click();URL.revokeObjectURL(a.href)}
+function restoreInventory(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let j=JSON.parse(r.result);if(!j.inventory||!j.movements)throw Error('Invalid inventory backup');invSave(j.inventory);saveMovements(j.movements);syncMedCatalog();renderInventory();alert('Inventory backup restored.')}catch(x){alert(x.message)}};r.readAsText(f)}
+function dispenseUnitFor(item){
+ const z=((item?.unit||'')+' '+(item?.form||'')+' '+(item?.name||'')).toLowerCase();
+ if(/tablet/.test(z))return 'tablets';
+ if(/capsule/.test(z))return 'capsules';
+ if(/sachet/.test(z)||/ors/.test(z))return 'sachets';
+ if(/bottle/.test((item?.unit||'').toLowerCase())||/syrup|suspension|expect|normal saline|dextrose|ringer|dns|\\brl\\b/.test(z))return 'bottles';
+ if(/tube/.test((item?.unit||'').toLowerCase())||/gel|cream|ointment/.test(z))return 'tubes';
+ if(/vial|ampoule|injection|vaccine/.test(z))return 'vials';
+ return '';
+}
+function deductPrescriptionStock(){
+ if(current._stockDeducted)return;
+ let db=invLoad()||{},phc=db['PHC Parite']||[],moves=movements(),now=new Date().toISOString();
+ (current.plan.medicines||[]).forEach(m=>{
+  let item=m.stockSource==='PHC Parite'?phc.find(x=>x.id===m.stockItemId||x.name===m.name):null;
+  if(!item)return;
+  const raw=String(m.quantity??'').trim(),n=Number.parseFloat(raw),stockUnit=dispenseUnitFor(item),dispUnit=String(m.quantityUnit||stockUnit).toLowerCase();
+  const unitAliases={tablets:['tablet','tablets'],capsules:['capsule','capsules'],sachets:['sachet','sachets'],bottles:['bottle','bottles'],tubes:['tube','tubes'],vials:['vial','vials','ampoule','ampoules']};
+  const compatible=stockUnit&&((unitAliases[stockUnit]||[]).includes(dispUnit)||dispUnit===stockUnit);
+  if(!raw||!Number.isFinite(n)||n<=0){m.stockWarning='No issue quantity entered; no inventory deduction made.';return}
+  if(!compatible){m.stockWarning='Stock unit does not match the issue unit. No deduction made; verify the catalogue unit.';return}
+  if(Number(item.quantity)>=n){item.quantity=Number(item.quantity)-n;moves.push({date:now,name:item.name,quantity:n,unit:item.unit,consultId:current.id,source:'PHC Parite'});m.stockWarning='Issued and deducted from PHC stock.'}
+  else {m.stockWarning='Insufficient recorded stock; no deduction made. Verify physical stock.'}
+ });
+ db['PHC Parite']=phc;invSave(db);saveMovements(moves);current._stockDeducted=true;syncMedCatalog();
+}
+
+const DX_MED_MAP={"Acute febrile illness, unspecified": ["Paracetamol 500 mg tablet", "ORS WHO formula 20.5 g sachet"], "Malaria, unspecified": ["Paracetamol 500 mg tablet", "ORS WHO formula 20.5 g sachet"], "Dengue fever": ["Paracetamol 500 mg tablet", "ORS WHO formula 20.5 g sachet"], "Chikungunya": ["Paracetamol 500 mg tablet", "ORS WHO formula 20.5 g sachet"], "Acute upper respiratory infection, unspecified": ["Paracetamol 500 mg tablet", "Cetirizine 10 mg tablet", "Diphenhydramine + ammonium chloride + sodium citrate + menthol expectorant"], "Acute pharyngitis, unspecified": ["Paracetamol 500 mg tablet", "Amoxicillin 500 mg capsule"], "Acute tonsillitis, unspecified": ["Paracetamol 500 mg tablet", "Amoxicillin 500 mg capsule"], "Acute bronchitis, unspecified": ["Paracetamol 500 mg tablet", "Diphenhydramine + ammonium chloride + sodium citrate + menthol expectorant"], "Pneumonia, unspecified organism": ["Paracetamol 500 mg tablet", "Amoxicillin 500 mg capsule", "Amoxicillin + clavulanic acid 500/125 mg tablet", "Cefotaxime 1 g injection"], "Asthma, unspecified": [], "Acute gastroenteritis / diarrhoea, presumed infectious": ["ORS WHO formula 20.5 g sachet"], "Gastritis, unspecified": ["Pantoprazole 40 mg tablet"], "Dyspepsia": ["Pantoprazole 40 mg tablet"], "Urinary tract infection, site not specified": ["Amoxicillin 500 mg capsule"], "Acute cystitis": ["Amoxicillin 500 mg capsule"], "Acute pyelonephritis": ["Cefotaxime 1 g injection"], "Headache, unspecified": ["Paracetamol 500 mg tablet"], "Migraine, unspecified": ["Paracetamol 500 mg tablet"], "Dizziness and giddiness": ["ORS WHO formula 20.5 g sachet"], "Syncope and collapse": [], "Essential hypertension": ["Amlodipine 5 mg tablet"], "Type 2 diabetes mellitus without complications": ["Metformin 500 mg tablet", "Glimepiride 2 mg tablet"], "Low back pain": ["Diclofenac 1% gel 30 g", "Paracetamol 500 mg tablet"], "Pain in joint": ["Diclofenac 1% gel 30 g", "Paracetamol 500 mg tablet"], "Dermatitis, unspecified": ["Calamine lotion 50 mL"], "Allergic urticaria": ["Cetirizine 10 mg tablet"], "Iron deficiency anaemia, unspecified": ["IFA tablet (iron 60 mg + folic acid 500 mcg)", "Folic acid 5 mg tablet", "Iron sucrose 50 mg/2.5 mL injection"], "Anaemia, unspecified": ["IFA tablet (iron 60 mg + folic acid 500 mcg)", "Folic acid 5 mg tablet"], "Acute conjunctivitis, unspecified": ["Ciprofloxacin eye/ear drops 5 mL"], "Otitis media, unspecified": ["Amoxicillin 500 mg capsule"], "Dental caries, unspecified": ["Paracetamol 500 mg tablet"], "Wound, unspecified": ["Povidone iodine 5% solution"], "Animal bite, unspecified": ["Anti-rabies vaccine (human tissue culture) 1 mL"], "Burn, unspecified": ["Paracetamol 500 mg tablet"], "Jaundice, unspecified": [], "Nausea and vomiting": ["ORS WHO formula 20.5 g sachet"], "Abdominal pain, unspecified": [], "Other symptoms and signs involving the circulatory system / oedema": []};
+
+function diagnosisFilteredMedicines(){
+ const dx=current.assessment?.diagnosis||'';
+ if(!dx || !Object.prototype.hasOwnProperty.call(DX_MED_MAP,dx)) return MED_CATALOG;
+ const names=DX_MED_MAP[dx];
+ return MED_CATALOG.filter(m=>names.includes(m[0]));
+}
+function medicineFilterNotice(){
+ const dx=current.assessment?.diagnosis||'';
+ if(!dx) return 'No confirmed diagnosis selected: full PHC catalogue shown. Select a diagnosis in Assessment to filter suggestions.';
+ if(!Object.prototype.hasOwnProperty.call(DX_MED_MAP,dx)) return 'No diagnosis-specific mapping configured: full PHC catalogue shown.';
+ const names=DX_MED_MAP[dx];
+ if(!names.length) return 'No medicine mapped for this diagnosis. Investigate, assess severity and refer/treat according to protocol; do not prescribe empirically.';
+ const notInStock=names.filter(n=>!MED_CATALOG.some(m=>m[0]===n));
+ return 'Filtered suggestions only—not a prescription. Not found in the PHC Parite stock report: '+(notInStock.join('; ')||'none')+'. Confirm indication, current stock and expiry.';
+}
+
+function openModal(kind){modalKind=kind;let title='',body='';
+if(kind==='patient'){title='Patient basics';body=`<div class="field"><label>Patient name</label><div class="row"><input id="patientName" value="${escapeHtml(current.patient.name||'')}" placeholder="Full name"><button type="button" onclick="voicePatientName()">🎙 Voice</button></div><p class="muted" id="voiceStatus">Tap Voice and speak the patient name. Browser speech recognition support and microphone permission are required.</p></div><div class="field"><label>Father / Spouse name</label><input id="fatherSpouse" value="${escapeHtml(current.patient.fatherSpouse||'')}" placeholder="Father / spouse name"></div><div class="field"><label>CR number (optional)</label><input id="patientCrNo" value="${escapeHtml(current.patient.crNo||'')}" placeholder="Registration number"></div><div class="field"><label>Mobile number (optional)</label><input id="patientMobile" value="${escapeHtml(current.patient.mobile||'')}" placeholder="Mobile number"></div><div class="field"><label>Village</label><div class="optionrow">${opts('village',['Parite','Paritewadi','Ghoti','Warvade','Venegaon','Ahergaon','Bembale','Dagad Akole','Mitkalwadi','Bhuinje','Vhole','Akumbhe'],current.patient.village||'')}</div><input id="patientVillageOther" value="${escapeHtml(current.patient.villageOther||'')}" placeholder="Other village – type here" style="margin-top:8px"></div><div class="field"><label>Age group</label><div class="optionrow">${opts('ageGroup',['0–5 years','6–12 years','13–18 years','19–59 years','60+ years'],current.patient.ageGroup)}</div></div><div class="field"><label>Sex</label><div class="optionrow">${opts('sex',['Male','Female','Other','Not recorded'],current.patient.sex)}</div></div><div class="field"><label>Exact age (optional)</label><input id="ageInput" type="number" min="0" max="120" placeholder="Enter age only if needed" value="${current.patient.age}"></div><p class="muted">Pregnancy status will be asked for patients where relevant.</p>`}
+if(kind==='complaints'){title='Select presenting complaints';body=`<div class="grid">${multi('complaints',['Fever','Chills / rigors','Cough','Cold / runny nose','Sore throat','Breathlessness','Wheezing','Chest pain','Palpitations','Headache','Giddiness / vertigo','Fainting / syncope','Weakness / fatigue','Body ache / myalgia','Abdominal pain','Nausea','Vomiting','Loose stools','Constipation','Loss of appetite','Acidity / heartburn','Jaundice','Burning urination','Increased frequency of urination','Reduced urine / retention','Blood in urine','Flank pain','Joint pain','Back pain','Neck pain','Swelling of limb','Skin rash / itching','Wound / injury','Animal bite','Burn','Eye redness / pain','Ear pain / discharge','Toothache','Seizure','Altered behaviour / confusion','Loss of consciousness','Weight loss','Excessive thirst / urination','Menstrual complaint','Vaginal discharge','Pregnancy-related complaint','Bleeding','Pallor / suspected anaemia','Leg swelling','Other symptom'])}</div>`}
+if(kind==='history'){title='Complaint-linked history';let qs=[];const add=(key,label,values)=>qs.push([key,label,values]);const yn=['Yes','No','Not sure'];
+if(current.complaints.some(x=>['Fever','Chills / rigors','Body ache / myalgia'].includes(x))){
+add('feverOnset','Fever duration',['<24 hours','1–3 days','4–7 days','8–14 days','>14 days']);
+add('feverPattern','Fever pattern',['Continuous','Intermittent','Relapsing','Not sure']);
+add('chills','Chills / rigors',yn);add('antipyretic','Response to antipyretics',['Good','Partial','No response','Not tried']);
+add('rash','Rash / petechiae / bleeding',yn);add('bodyache','Severe body ache / retro-orbital pain',yn);
+add('vomitingPersistent','Persistent vomiting',yn);add('abdominalPain','Severe abdominal pain / tenderness',yn);
+add('lethargy','Lethargy / restlessness / altered sensorium',yn);add('cough','Cough or respiratory symptoms',yn);
+add('urinary','Burning urination / flank pain',yn);add('gi','Loose stools / vomiting / abdominal symptoms',yn);
+add('exposure','Exposure',['Mosquito exposure','Recent travel','Sick contact','None known','Not sure']);
+add('intake','Oral intake / urine output',['Normal','Reduced intake','Reduced urine','Both reduced','Unable to take orally']);}
+if(current.complaints.some(x=>['Cough','Cold / sore throat','Cold / runny nose','Sore throat','Breathlessness','Wheezing'].includes(x))){
+add('respDuration','Respiratory symptom duration',['<3 days','3–7 days','1–2 weeks','>2 weeks']);add('breathRest','Breathlessness at rest',yn);
+add('orthopnoea','Orthopnoea / waking breathless at night',yn);add('chestPain','Chest pain',yn);
+add('sputum','Cough type',['Dry','Mucoid','Purulent','Blood-stained','No sputum']);add('wheeze','Wheeze / noisy breathing',yn);
+add('soreThroat','Sore throat / difficulty swallowing',['Sore throat','Difficulty swallowing','Both','Neither']);}
+if(current.complaints.includes('Abdominal pain')){
+add('abdOnset','Abdominal pain duration',['<6 hours','6–24 hours','1–3 days','>3 days']);
+add('abdSite','Pain location',['Epigastric','Right upper abdomen','Left upper abdomen','Periumbilical','Right lower abdomen','Left lower abdomen','Diffuse']);
+add('abdNature','Pain character',['Colicky','Burning','Dull','Sharp','Cramping']);add('abdSeverity','Severity',['Mild','Moderate','Severe']);
+add('abdVomiting','Vomiting with pain',yn);add('abdBlood','Blood in stool / black stool',yn);
+add('abdBowel','Bowel movement',['Normal','Constipation','Loose stools','No passage of stool/gas']);}
+if(current.complaints.some(x=>['Vomiting','Loose stools'].includes(x))){
+add('giFrequency','Frequency',['1–2 episodes','3–5 episodes','>5 episodes','Continuous']);add('giBlood','Blood in vomit / stool',yn);
+add('giDehydration','Thirst / dry mouth / reduced urine',yn);add('giIntake','Able to retain oral fluids',['Yes','Partly','No']);}
+if(current.complaints.some(x=>['Urinary symptoms','Burning urination','Increased frequency of urination','Reduced urine / retention','Blood in urine','Flank pain'].includes(x))){
+add('urinaryType','Urinary symptoms',['Burning micturition','Frequency / urgency','Blood in urine','Flank pain','Retention / difficulty passing urine']);
+add('urinaryFever','Fever / chills with urinary symptoms',yn);add('urinaryPreg','Pregnancy possibility (if relevant)',['Yes','No','Not sure','Not applicable']);}
+if(current.complaints.some(x=>['Headache','Seizure','Altered behaviour / confusion','Loss of consciousness'].includes(x))){
+add('headacheOnset','Headache onset',['Sudden / thunderclap','Gradual','Recurrent']);add('headacheSeverity','Severity',['Mild','Moderate','Severe / worst ever']);
+add('headacheNeuro','Weakness / visual or speech disturbance / seizure',yn);add('headacheFever','Fever / neck stiffness / rash',yn);add('headacheTrauma','Recent head injury',yn);}
+if(current.complaints.some(x=>['Giddiness / vertigo','Fainting / syncope','Palpitations'].includes(x))){
+add('dizzyType','Type of giddiness',['Spinning sensation','Light-headedness','Imbalance while walking','Fainting / near-fainting']);
+add('dizzyTrigger','Trigger',['On standing','Head movement','Continuous','Exertion','No clear trigger']);
+add('dizzyNeuro','New weakness / speech or vision disturbance',yn);add('dizzyChest','Chest pain / palpitations',yn);}
+if(current.complaints.some(x=>['Weakness / fatigue','Pallor / suspected anaemia','Weight loss','Excessive thirst / urination'].includes(x))){
+add('weakDuration','Duration',['<1 week','1–4 weeks','1–6 months','>6 months']);add('weakPattern','Pattern',['Generalised','One-sided','Proximal limb weakness','Exertional fatigue']);
+add('weakAssociated','Associated symptoms',['Weight loss','Loss of appetite','Fever','Bleeding','Breathlessness','None']);}
+if(current.complaints.includes('Chest pain')){
+add('chestOnset','Onset',['Sudden','Gradual','On exertion','At rest']);add('chestNature','Character',['Pressure / heaviness','Sharp / pleuritic','Burning','Reproducible on touch']);
+add('chestRadiation','Radiation',['Arm / jaw','Back','No radiation','Not sure']);add('chestAssociated','Sweating / breathlessness / syncope',yn);}
+if(current.complaints.some(x=>['Joint / back pain','Joint pain','Back pain','Neck pain','Swelling of limb'].includes(x))){
+add('jointSite','Site',['Single joint','Multiple joints','Back / spine','Neck']);add('jointSwelling','Swelling / redness / warmth',yn);
+add('jointTrauma','Recent injury / trauma',yn);add('jointFever','Fever with joint pain',yn);}
+if(current.complaints.some(x=>['Skin complaint','Skin rash / itching','Wound / injury','Animal bite','Burn'].includes(x))){
+add('skinOnset','Onset',['Sudden','Gradual','Recurrent']);add('skinSpread','Progression',['Localised','Spreading','Generalised','Improving']);
+add('skinItch','Itching / pain',['Itching','Pain','Both','Neither']);add('skinMucosa','Mucosal involvement / facial swelling',yn);}
+if(current.complaints.some(x=>['Injury / wound','Wound / injury','Animal bite','Burn'].includes(x))){
+add('injuryTime','Time since injury',['<6 hours','6–24 hours','1–3 days','>3 days']);add('injuryType','Mechanism',['Fall','Road traffic injury','Cut / sharp object','Animal bite','Burn','Other']);
+add('injuryBleed','Bleeding / deep wound',yn);add('injuryTetanus','Tetanus immunisation status',['Up to date','Incomplete / unknown','Not assessed']);}
+const covered=['Fever','Chills / rigors','Body ache / myalgia','Cough','Cold / sore throat','Cold / runny nose','Sore throat','Breathlessness','Wheezing','Abdominal pain','Vomiting','Nausea','Loose stools','Urinary symptoms','Burning urination','Increased frequency of urination','Reduced urine / retention','Blood in urine','Flank pain','Headache','Seizure','Altered behaviour / confusion','Loss of consciousness','Giddiness / vertigo','Fainting / syncope','Palpitations','Weakness / fatigue','Pallor / suspected anaemia','Weight loss','Excessive thirst / urination','Chest pain','Joint / back pain','Joint pain','Back pain','Neck pain','Swelling of limb','Skin complaint','Skin rash / itching','Wound / injury','Animal bite','Burn'];
+current.complaints.filter(x=>!covered.includes(x)).forEach((x,i)=>{const k='other_'+i;add(k+'_duration',x+' – duration',['Today','1–3 days','4–7 days','1–2 weeks','>2 weeks','Recurrent']);add(k+'_progress',x+' – progression',['Improving','Same','Worsening']);add(k+'_severity',x+' – severity',['Mild','Moderate','Severe']);add(k+'_redflag',x+' – associated danger feature',['Present','Absent','Not assessed']);});
+if(!qs.length){add('onset','Onset',['Today','1–3 days','4–7 days','>1 week']);add('progress','Progression',['Improving','Same','Worsening']);}
+body=qs.map(q=>`<div class="field"><label>${q[1]}</label><div class="optionrow">${q[2].map(v=>`<button class="chip ${current.history[q[0]]===v?'on':''}" data-key="${q[0]}" data-val="${v}" onclick="single(this)">${v}</button>`).join('')}</div></div>`).join('')+`<div class="field"><label>Additional note (optional)</label><textarea id="historyNote" placeholder="Only if clinically necessary">${current.history.note||''}</textarea></div><p class="muted">Questions are generated from selected complaints. Select only answers actually obtained.</p>`}
+if(kind==='vitals'){title='Record vital signs';const v=current.vitals;body=`${vitalField('Temperature °C','temp',v.temp,['36.5','37.0','37.5','38.0','38.5','39.0','40.0'])}${vitalField('Pulse /min','pulse',v.pulse,['60','80','90','100','110','120','130'])}${vitalField('Respiratory rate /min','rr',v.rr,['12','16','18','20','22','24','30'])}${vitalField('SpO₂ %','spo2',v.spo2,['90','92','94','95','96','97','98','99','100'])}${vitalField('Systolic BP mmHg','sbp',v.sbp,['90','100','110','120','130','140','160'])}${vitalField('Diastolic BP mmHg','dbp',v.dbp,['60','70','80','90','100'])}${vitalField('Weight kg','weight',v.weight,[]) }<p class="muted">Tap a common value or enter an exact measurement. Use age-specific reference ranges in children.</p>`}
+if(kind==='exam'){title='General + focused examination';
+const general=['General condition','Consciousness / orientation','Hydration status','Pallor','Icterus','Cyanosis','Clubbing','Lymphadenopathy','Pedal edema','Nutritional status'];
+let focused=[];const has=a=>current.complaints.some(x=>a.includes(x));
+if(has(['Fever','Skin complaint','Skin rash / itching','Wound / injury','Animal bite','Burn','Bleeding']))focused.push('Skin and rash examination','Petechiae / bleeding signs','Temperature pattern / toxemia');
+if(has(['Cough','Cold / sore throat','Cold / runny nose','Sore throat','Breathlessness','Wheezing']))focused.push('Respiratory rate / work of breathing','Chest inspection and expansion','Trachea / percussion if indicated','Air entry and added sounds');
+if(has(['Chest pain','Palpitations','Fainting / syncope','Breathlessness']))focused.push('Pulse volume / rhythm','Peripheral perfusion','JVP if indicated','Heart sounds / murmurs');
+if(has(['Abdominal pain','Vomiting','Nausea','Loose stools','Urinary symptoms','Burning urination','Jaundice']))focused.push('Abdominal inspection','Tenderness / guarding / rigidity','Organomegaly / masses','Bowel sounds','Renal angle tenderness');
+if(has(['Headache','Giddiness','Giddiness / vertigo','Fainting / syncope','Weakness / fatigue','Seizure','Altered behaviour / confusion','Loss of consciousness']))focused.push('Higher mental functions','Pupils / cranial nerves','Motor and sensory examination','Reflexes / plantar response','Gait / coordination / balance','Neck stiffness');
+if(has(['Joint / back pain','Joint pain','Back pain','Neck pain','Swelling of limb']))focused.push('Inspection / deformity','Tenderness / warmth / swelling','Range of movement','Spine / straight-leg raise if indicated','Distal neurovascular status');
+if(has(['Injury / wound','Wound / injury','Animal bite','Burn']))focused.push('Wound site / dimensions / depth','Contamination / foreign body','Bleeding / tissue viability','Distal pulse / sensation / movement','Tetanus and bite-risk assessment');
+if(!focused.length)focused.push('Relevant local examination','Relevant systemic examination');
+const selected=(key,x)=>((current.exam[key]||[]).includes(x));
+body=`<div class="field"><label>Overall clinical status</label><div class="optionrow">${opts('examStatus',['Stable','Needs closer assessment','Unwell / urgent review','Not assessed'],current.exam.status||'Not assessed')}</div></div>
+<div class="field"><h3> A. General examination</h3><div class="grid">${general.map(x=>`<button class="tile ${selected('generalItems',x)?'selected':''}" data-exam-group="generalItems" data-exam="${x}" onclick="toggleExam(this)"><span class="tick">${selected('generalItems',x)?'✓':''}</span>${x}</button>`).join('')}</div></div>
+<div class="field"><h3>B. Complaint-specific / systemic examination</h3><div class="grid">${focused.map(x=>`<button class="tile ${selected('focusedItems',x)?'selected':''}" data-exam-group="focusedItems" data-exam="${x}" onclick="toggleExam(this)"><span class="tick">${selected('focusedItems',x)?'✓':''}</span>${x}</button>`).join('')}</div></div>
+<p class="muted">Tick only domains actually examined. A tick means assessed, not normal. Document abnormal findings and important negatives below. Select only examinations appropriate to the patient.</p>
+<div class="field"><h3>C. Quick systemic findings (tap normal or abnormal)</h3>
+<div class="summaryline"><b>CVS</b><div class="optionrow">${examFindingOpts('CVS',['S1 S2 heard','Murmur heard','Irregular rhythm','Other abnormal finding'])}</div></div>
+<div class="summaryline"><b>RS</b><div class="optionrow">${examFindingOpts('RS',['Air entry bilaterally equal','Reduced air entry','Wheeze','Crepitations','Other abnormal finding'])}</div></div>
+<div class="summaryline"><b>CNS</b><div class="optionrow">${examFindingOpts('CNS',['Conscious and oriented','Altered sensorium','Focal neurological deficit','Other abnormal finding'])}</div></div>
+<div class="summaryline"><b>GIT / Abdomen</b><div class="optionrow">${examFindingOpts('GIT',['No abnormality detected','Soft, non-tender','Tenderness present','Guarding / rigidity','Organomegaly / mass','Other abnormal finding'])}</div></div>
+<p class="muted">Normal findings are quick selections, not pre-recorded findings. Tap only what you actually examined.</p></div>
+<div class="field"><label>Abnormal findings / important negatives (optional)</label><textarea id="examNote" placeholder="e.g. bilateral air entry present, no added sounds; abdomen soft, non-tender">${current.exam.note||''}</textarea></div>`}
+if(kind==='assessment'){title='Clinical assessment';body=`<div class="notice">Differential prompts are considerations only, not a ranked diagnosis or confirmed result. Red flags require immediate clinical assessment.</div><div id="diffList">${differentials().map(x=>`<div class="summaryline">• ${x}</div>`).join('')||'Select history and vitals to generate relevant prompts.'}</div><div class="field"><label>Search diagnosis / ICD-10 code</label><input id="diagnosisSearch" type="search" placeholder="Type diagnosis or code, e.g. R42, J06.9, weakness" oninput="filterDiagnosisOptions()"></div><div class="field"><label>Medical Officer confirmed working diagnosis</label><select id="diagnosisSelect" onchange="syncDiagnosisSearch()"><option value="">Select after clinical assessment</option>${DX_CATALOG.map(d=>`<option value="${d[0]}" ${current.assessment.diagnosis===d[0]?'selected':''}>${d[0]} — ICD-10: ${d[1]}</option>`).join('')}</select><p class="muted">ICD-10 code is a coding aid. Confirm the diagnosis and code against current clinical documentation before saving.</p></div><div class="field"><label>Investigation plan (MO selected)</label><div class="optionrow">${['CBC','Malaria RDT / smear','Dengue test as per illness day','Urine routine','Blood glucose','Chest X-ray if indicated','Other / none'].map(x=>`<button class="chip ${current.assessment.tests?.includes(x)?'on':''}" data-test="${x}" onclick="toggleTest(this)">${x}</button>`).join('')}</div></div>`}
+if(kind==='plan'){title='Treatment, prescription and follow-up';const meds=current.plan.medicines||[];body=`
+<div class="field"><label>Disposition</label><div class="optionrow">${opts('disposition',['Home with advice','Review at PHC','Refer urgently','Admit / observe','Other'],current.plan.disposition||'Home with advice')}</div></div>
+<div class="field"><label>Follow-up</label><div class="optionrow">${opts('followup',['24 hours','48 hours','3 days','5 days','7 days','As needed'],current.plan.followup||'48 hours')}</div></div>
+<h3>Prescription</h3><div class="notice">PHC Parite formulary is based on the stock-in-hand report dated 19-Aug-2024. Quantities are historical, not live stock. Verify physical availability, expiry, current formulary and current protocol. District DHO stock is not PHC stock.</div><div class="notice">${medicineFilterNotice()}</div>
+<div class="field"><label>Catalogue source</label><select id="rxStockSource" onchange="refreshRxMedicineList()"><option value="PHC Parite">PHC Parite – dispensable stock</option><option value="Solapur DHO">Solapur DHO – reference only</option></select></div><div class="field"><label>Search generic medicine</label><div class="row"><input id="medicineSearch" type="search" placeholder="Type generic name, brand synonym or strength" oninput="filterMedicineOptions()"><button type="button" class="secondary" onclick="clearMedicineSearch()">Clear search</button></div></div>
+<div class="field"><label>Quick-pick commonly used medicines</label><div class="optionrow" id="quickMedicinePicks">${['Paracetamol','Cetirizine','Diclofenac tablet','Diclofenac gel','Cough syrup','Iron + folic acid','Omeprazole','Amoxicillin 500 mg','Metformin','Amlodipine','Anti-rabies vaccine','ORS powder','Inj. Td'].map(x=>`<button type="button" class="chip" onclick="quickPickMedicine('${x.replace(/'/g, "\'")}')">${x}</button>`).join('')}</div><p class="muted">Quick picks use exact PHC Parite stock-report names where available. Zero-stock and unlisted medicines can still be prescribed; they are clearly marked for manual stock verification and are not deducted from inventory.</p></div>
+<div class="field"><label>Select medicine / formulation</label><select id="medicineSelect" onchange="configureMedicineDose()"><option value="">Choose from PHC Parite catalogue</option></select></div>
+<div class="grid">
+<div class="field"><label id="rxDoseLabel">Dose / unit per administration</label><select id="rxDose" onchange="calculateRxQuantity()"><option value="">MO select dose</option></select><input id="rxDoseCustom" class="hidden" placeholder="Enter exact dose / volume" oninput="calculateRxQuantity()"></div>
+<div class="field"><label>Route</label><select id="rxRoute"><option value="">MO select route</option>${['Oral','ID','IM','IV','SC','Topical','Ophthalmic','Otic','Inhalation','Other'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+<div class="field"><label>Frequency</label><select id="rxFrequency" onchange="calculateRxQuantity()"><option value="">Select frequency</option>${['Once','OD','BD','TDS','QID','SOS','As directed','Other'].map(x=>`<option ${x==='BD'?'selected':''}>${x}</option>`).join('')}</select></div>
+<div class="field"><label>Duration</label><select id="rxDuration" onchange="calculateRxQuantity()"><option value="">Select duration</option>${[3,5,10,15,20,30].map(x=>`<option value="${x}" ${x===3?'selected':''}>${x} days</option>`).join('')}<option value="custom">Custom / protocol-based</option></select><input id="rxDurationCustom" class="hidden" type="number" min="1" placeholder="Enter days" oninput="calculateRxQuantity()"></div>
+<div class="field"><label>Total order quantity <span class="muted">(tablets/capsules auto-calculated; packs for liquids/injections)</span></label><input id="rxQuantity" inputmode="decimal" placeholder="Enter numeric quantity only (e.g. 6 or 1)" oninput="this.dataset.manual='1'"></div>
+<div class="field"><label>Timing / instructions</label><select id="rxInstructions" onchange="calculateRxQuantity()"><option value="">Select timing / instruction</option>${['Before food','After food','With food','Empty stomach','At bedtime','Morning','Evening','With plenty of water','As directed on label','Custom instruction'].map(x=>`<option>${x}</option>`).join('')}</select><input id="rxInstructionsCustom" class="hidden" placeholder="Enter custom instruction"></div>
+</div>
+<p class="muted" id="rxCalcNote">Select medicine, dose, frequency and duration. Quantity is calculated only when units are compatible; SOS, topical, drops, fluids and custom schedules require MO entry.</p>
+<button class="soft wide" onclick="addMedicine()">＋ Add to prescription</button>
+<div class="field"><label>Selected prescription items (${meds.length})</label><div id="medicineList">${meds.map((m,i)=>`<div class="summaryline"><b>${m.name}</b><br>${m.dose||'Dose pending'} · ${m.route||'Route pending'} · ${m.frequency||'Frequency pending'} · ${m.duration||'Duration pending'} · Qty: ${m.quantity?m.quantity+(m.quantityUnit?' '+m.quantityUnit:(/gel|cream|ointment/i.test(m.name)?' tube':/syrup|suspension|expect/i.test(m.name)?' bottle':/injection|ampoule|vial|vaccine/i.test(m.name)?' vial/ampoule':/normal saline|dextrose|ringer|iv fluid/i.test(m.name)?' bottle':'')):''}<br><span class="muted">${m.instructions||''} ${m.caution||''}</span><br><button onclick="removeMedicine(${i})">Remove</button></div>`).join('')||'No medicine added yet.'}</div></div>
+<div class="field"><label>Cleaning / dressing of wound</label><div class="optionrow">${opts('woundCare',['Wound cleaned','Wound dressing done','Cleaning + sterile dressing done','Dressing advised / follow-up','Not required'],current.plan.woundCare||'')}</div></div>
+<div class="field"><label>Non-drug treatment / procedures / wound care</label><textarea id="nonDrugPlan" placeholder="Advice, dressing, ORS counselling, lifestyle measures, procedure details, etc.">${current.plan.nonDrug||''}</textarea></div>
+<div class="field"><label>Additional advice / plan</label><textarea id="planNote" placeholder="Patient-specific instructions">${current.plan.note||''}</textarea></div>
+<div class="notice">No dose is automatically prescribed. MO must verify indication, age and weight, allergy, pregnancy/lactation, renal/hepatic function, contraindications, interactions, maximum dose, route, duration and current national/state protocol. Do not use adult doses for children. Review every prescription before printing or saving.</div>`}
+
+$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modalback').classList.add('open');if(kind==='plan')refreshRxMedicineList()}
+function examFindingOpts(system,arr){const val=(current.exam.systemFindings||{})[system]||'';return arr.map(x=>`<button class="chip ${val===x?'on':''}" onclick="setExamFinding('${system}','${x.replace("'", "\'")}')">${x}</button>`).join('')}
+function setExamFinding(system,value){current.exam.systemFindings=current.exam.systemFindings||{};current.exam.systemFindings[system]=value;openModal('exam')}
+
+function voicePatientName(){const input=$('patientName'),status=$('voiceStatus');const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){if(status)status.textContent='Voice recognition is not supported in this browser. Use keyboard entry.';return}const rec=new SR();rec.lang='en-IN';rec.interimResults=false;rec.maxAlternatives=1;if(status)status.textContent='Listening… speak the patient name.';rec.onresult=e=>{const text=e.results?.[0]?.[0]?.transcript||'';if(input){input.value=text;input.dispatchEvent(new Event('input',{bubbles:true}))}if(status)status.textContent='Captured: '+text};rec.onerror=e=>{if(status)status.textContent='Voice capture failed ('+e.error+'). Check microphone permission or type the name.'};rec.onend=()=>{};try{rec.start()}catch(e){if(status)status.textContent='Could not start microphone. Try again or type the name.'}}
+function opts(key,arr,selected){return arr.map(v=>`<button class="chip ${selected===v?'on':''}" data-single="${key}" data-val="${v}" onclick="single(this)">${v}</button>`).join('')}
+function multi(key,arr){return arr.map(v=>`<button class="tile ${current[key].includes(v)?'selected':''}" data-multi="${key}" data-val="${v}" onclick="toggleMulti(this)"><span class="tick">${current[key].includes(v)?'✓':''}</span>${v}</button>`).join('')}
+function vitalField(label,key,value,choices){return `<div class="field"><label>${label}</label><div class="optionrow">${choices.map(v=>`<button class="chip ${String(value)===v?'on':''}" data-vital="${key}" data-val="${v}" onclick="vitalTap(this)">${v}</button>`).join('')}</div><input id="v_${key}" type="number" inputmode="decimal" placeholder="Exact value (optional)" value="${value||''}"></div>`}
+function single(b){let key=b.dataset.key||b.dataset.single;let value=b.dataset.val;if(modalKind==='history')current.history[key]=value;else if(modalKind==='patient')current.patient[key]=value;else if(modalKind==='exam')current.exam[key]=value;else if(modalKind==='plan')current.plan[key]=value;openModal(modalKind)}
+function toggleMulti(b){let k=b.dataset.multi,v=b.dataset.val;current[k].includes(v)?current[k]=current[k].filter(x=>x!==v):current[k].push(v);openModal(modalKind)}
+function vitalTap(b){let k=b.dataset.vital;current.vitals[k]=b.dataset.val;openModal('vitals')}
+function toggleExam(b){let v=b.dataset.exam,k=b.dataset.examGroup||'focusedItems';current.exam[k]=current.exam[k]||[];current.exam[k].includes(v)?current.exam[k]=current.exam[k].filter(x=>x!==v):current.exam[k].push(v);openModal('exam')}
+function toggleTest(b){let v=b.dataset.test;current.assessment.tests=current.assessment.tests||[];current.assessment.tests.includes(v)?current.assessment.tests=current.assessment.tests.filter(x=>x!==v):current.assessment.tests.push(v);openModal('assessment')}
+function refreshRxMedicineList(){
+ const src=$('rxStockSource')?.value||'PHC Parite',db=invLoad()||{},items=(db[src]||[]).filter(x=>x.active!==false);
+ // Diagnosis mappings remain suggestions only; never hide otherwise selectable catalogue items.
+ const sel=$('medicineSelect');if(!sel)return;
+ if($('medicineSearch'))$('medicineSearch').value='';
+ sel.innerHTML='<option value="">Choose medicine</option>'+items.map(m=>{let original=(db[src]||[]).indexOf(m);return `<option value="${src}|${original}">${escapeHtml(m.name)} · ${m.quantity} ${escapeHtml(m.unit)}${src==='Solapur DHO'?' · DHO reference':''}</option>`}).join('');
+}
+function filterDiagnosisOptions(){const q=($('diagnosisSearch')?.value||'').trim().toLowerCase();const sel=$('diagnosisSelect');if(!sel)return;Array.from(sel.options).forEach((o,i)=>{if(i===0)return;o.hidden=!!q&&!o.textContent.toLowerCase().includes(q)})}
+function syncDiagnosisSearch(){const s=$('diagnosisSelect');if(s&&s.selectedOptions[0])$('diagnosisSearch').value=s.selectedOptions[0].textContent;}
+function medicineSearchTerms(name){
+ const n=(name||'').toLowerCase();
+ const aliases=[
+  [/paracetamol/,'paracetamol pcm acetaminophen'],
+  [/amlod?e?pine|amlodipine/,'amlodipine amlodipin amlodipine besylate'],
+  [/amoxycillin|amoxicillin/,'amoxicillin amoxycillin amox'],
+  [/anti.?rabies|rabies vaccine/,'anti rabies vaccine arv'],
+  [/cough expectorant|diphenhydramine.*ammonium/,'cough syrup expectorant diphenhydramine ammonium chloride sodium citrate menthol'],
+  [/diclofenac.*gel/,'diclofenac gel diclo topical'],
+  [/diclofenac.*(tab|tablet)/,'diclofenac tablet diclofenac sodium tab diclo'],
+  [/iron.*folic|folic.*iron|ifa/,'iron folic acid ifa ferrous folic'],
+  [/metformin/,'metformin'],
+  [/omeprazole/,'omeprazole omeprazol'],
+  [/oral rehydration|ors/,'ors oral rehydration salt rehydration salts who formula'],
+  [/cetrizine|cetirizine/,'cetirizine cetrizine hydrochloride syrup 5 mg 5 ml'],
+  [/tetanus|t\.?d vaccine|td vaccine/,'td tetanus diphtheria tetanus toxoid vaccine']
+ ];
+ let extra='';for(const [re,words] of aliases){if(re.test(n)){extra+=' '+words;}}
+ return (n+' '+extra).toLowerCase();
+}
+function filterMedicineOptions(){
+ const q=($('medicineSearch')?.value||'').trim().toLowerCase(),sel=$('medicineSelect');if(!sel)return;
+ Array.from(sel.options).forEach((o,i)=>{if(i===0)return;const [src,idx]=(o.value||'').split('|');const item=(invLoad()||{})[src]?.[Number(idx)];const hay=medicineSearchTerms(item?.name||o.textContent);o.hidden=!!q&&!hay.includes(q);});
+}
+function clearMedicineSearch(){
+ const search=$('medicineSearch'),sel=$('medicineSelect');if(search)search.value='';
+ if(sel){Array.from(sel.options).forEach(o=>o.hidden=false);sel.value='';}
+}
+function quickPickMedicine(label){
+ const sel=$('medicineSelect'),search=$('medicineSearch');if(!sel)return;
+ const src=$('rxStockSource')?.value||'PHC Parite';
+ if(src!=='PHC Parite'){alert('Choose PHC Parite as the dispensing source. DHO stock is reference-only.');return;}
+ if(search)search.value='';
+ Array.from(sel.options).forEach(o=>o.hidden=false);
+ const db=invLoad()||{},items=db['PHC Parite']||[];
+ const specs={
+  'paracetamol':{code:'41.3',terms:['paracetamol tab 500 mg','paracetamol 500']},
+  'cetirizine':{code:'37.1',terms:['cetrizine hydrochloride tab 10 mg','cetirizine hydrochloride tab 10 mg']},
+  'cough syrup':{code:'189.1',terms:['cough expectorant diphenhydramine','cough expectorant']},
+  'amlodipine':{code:'163.2',terms:['amlodepine tab 5 mg','amlodipine tab 5 mg']},
+  'metformin':{code:'179.1',terms:['metformin tab 500 mg']},
+  'diclofenac tablet':{code:'43.2',terms:['diclofenac sodium tab 50 mg','diclofenac sodium tab']},
+  'diclofenac gel':{code:'43.3',terms:['diclofenac gel 1 % 30 gm','diclofenac gel']},
+  'iron + folic acid':{code:'306.5',terms:['tablet ifa iron 60mg folic acid 500mcg','tablet ifa','iron folic acid']},
+  'ors powder':{code:'32.1',terms:['oral rehydration salt powder who formula 20.5','oral rehydration salt powder']},
+  'omeprazole':{code:'26.1',terms:['omeprazole cap 20 mg','omeprazole']},
+  'amoxicillin 500 mg':{code:'55.3',terms:['amoxycillin cap 500 mg','amoxicillin cap 500 mg']},
+  'anti-rabies vaccine':{code:'220.4',terms:['anti rabies vaccine im','anti rabies vaccine']}
+ };
+ const key=label.toLowerCase(),spec=specs[key];if(!spec)return;
+ const norm=x=>(x||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+ let found=null;
+ for(const term of spec.terms){const t=norm(term);found=items.find(x=>norm(x.name+' '+(x.strength||'')+' '+(x.form||'')).includes(t));if(found)break;}
+ if(!found){const canonical=medicineIdentityKey({name:spec.terms.join(' ')});found=items.find(x=>medicineIdentityKey(x).startsWith(canonical.split('|')[0]+'|'));}
+ // Fallback to the app's currently rendered catalogue option, still matching by code/name.
+ let option=null;
+ if(found){const idx=items.indexOf(found);option=Array.from(sel.options).find(o=>o.value===`PHC Parite|${idx}`);}
+ if(!option){
+   const allOpts=Array.from(sel.options).slice(1);
+   for(const o of allOpts){const [source,idx]=o.value.split('|');const it=(db[source]||[])[Number(idx)];if(it&&spec.terms.some(t=>norm(it.name+' '+(it.strength||'')+' '+(it.form||'')).includes(norm(t)))){option=o;found=it;break;}}
+ }
+ if(!option){
+   // Create a local, explicitly unlisted zero-stock item so the MO can still prescribe it.
+   const fallbackNames={
+    'paracetamol':'Paracetamol Tab 500 mg [41.3]',
+    'cetirizine':'Cetrizine Hydrochloride Tab 10 mg [37.1]',
+    'cough syrup':'Cough Expectorant Diphenhydramine hydrochloride + Ammonium Chloride + Sodium Citrate + Menthol [189.1]',
+    'amlodipine':'Amlodepine Tab 5 mg [163.2]',
+    'metformin':'Metformin Tab 500 mg [179.1]',
+    'diclofenac tablet':'Diclofenac Sodium Tab 50 mg [43.2]',
+    'diclofenac gel':'Diclofenac Gel 1% 30 gm [43.3]',
+    'iron + folic acid':'Tablet IFA (Iron 60 mg + Folic Acid 500 mcg) [306.5]',
+    'ors powder':'Oral Rehydration Salt Powder WHO Formula 20.5 gms Sachet [32.1]',
+    'omeprazole':'Omeprazole Cap 20 mg [26.1]',
+    'amoxicillin 500 mg':'Amoxycillin Cap 500 mg [55.3]',
+    'anti-rabies vaccine':'Anti Rabies Vaccine IM (Human Tissue culture) 1ml [220.4]'
+   };
+   const form=/syrup|expectorant/.test(key)?'Syrup':/gel/.test(key)?'Ointment':/capsule|amoxicillin|omeprazole/.test(key)?'Capsule':/vaccine/.test(key)?'Injection':/sachet|ors/.test(key)?'Miscellaneous':'Tablet';
+   const unit=form==='Tablet'?'tablets':form==='Capsule'?'capsules':form==='Syrup'?'bottles':form==='Ointment'?'tubes':form==='Injection'?'vials':'sachets';
+   const newItem={id:'MANUAL-'+spec.code,name:fallbackNames[key],strength:'',form,quantity:0,unit,itemCode:spec.code,source:'PHC Parite',active:true,updatedAt:'Manually added · stock unverified',unlisted:true};
+   items.push(newItem);db['PHC Parite']=items;invSave(db);syncMedCatalog();refreshRxMedicineList();
+   option=Array.from(sel.options).find(o=>o.value===`PHC Parite|${items.length-1}`);found=newItem;
+ }
+ if(option){sel.value=option.value;configureMedicineDose();if(found&&Number(found.quantity)<=0){const n=$('rxCalcNote');if(n)n.textContent='ZERO / UNVERIFIED STOCK: prescription entry is allowed. Verify physical stock before dispensing; inventory will not be deducted.';}$('rxDose')?.focus();}
+}
+function configureMedicineDose(){
+ const el=$('medicineSelect'),dose=$('rxDose'),route=$('rxRoute');if(!el||el.value==='')return;
+ const [src,idx]=el.value.split('|');const item=(invLoad()||{})[src]?.[Number(idx)];if(!item)return;
+ const unit=(item.unit||'').toLowerCase(),name=(item.name||'').toLowerCase(),form=(item.form||'').toLowerCase(),combined=name+' '+form+' '+unit;
+ let opts=[],doseLabel='Dose / unit per administration',routeDefault='';
+ if(/tablet/.test(combined)){opts=[['0.5','½ tablet'],['1','1 tablet'],['2','2 tablets']];routeDefault='Oral'}
+ else if(/capsule/.test(combined)){opts=[['1','1 capsule'],['2','2 capsules']];routeDefault='Oral'}
+ else if(/sachet/.test(combined)){opts=[['1','1 sachet']];routeDefault='Oral'}
+ else if(/drop/.test(combined)){doseLabel='Drops / application';opts=[['1','1 drop'],['2','2 drops'],['3','3 drops'],['custom','Custom / product label']];routeDefault=/eye/.test(combined)?'Ophthalmic':'Otic'}
+ else if(/normal saline|dextrose|ringer|dns|rl\b|iv fluid/.test(combined)){doseLabel='IV fluid volume';opts=[['100','100 mL'],['250','250 mL'],['500','500 mL'],['1000','1000 mL']];routeDefault='IV'}
+ else if(/injection|ampoule|vial|vaccine/.test(combined)){doseLabel='Injection volume per administration';opts=[['0.2','0.2 mL'],['0.5','0.5 mL'],['1','1 mL'],['1.5','1.5 mL'],['2','2 mL'],['5','5 mL']];routeDefault=/iv/.test(combined)?'IV':'IM'}
+ else if(/syrup|suspension|solution|expect|bottle/.test(combined)){doseLabel='Liquid dose per administration';opts=[['2.5','2.5 mL'],['5','5 mL'],['7.5','7.5 mL'],['10','10 mL'],['15','15 mL'],['20','20 mL']];routeDefault='Oral'}
+ else if(/tube|gel|cream|ointment/.test(combined)){doseLabel='Topical application';opts=[['1','Thin layer / application'],['custom','Custom instruction']];routeDefault='Topical'}
+ else {opts=[['custom','Custom dose / volume']];}
+ $('rxDoseLabel').textContent=doseLabel;if(routeDefault)route.value=routeDefault;
+ dose.innerHTML='<option value="">Select dose</option>'+opts.map(o=>`<option value="${o[0]}" ${o[0]==='1' && /tablet|capsule|sachet/.test(combined)?'selected':''}>${o[1]}</option>`).join('')+'<option value="custom">Custom dose / volume</option>';
+ if(/tablet/.test(combined)){const fq=$('rxFrequency');if(fq)fq.value='BD';const dr=$('rxDuration');if(dr)dr.value='3';}
+ $('rxDoseCustom').classList.add('hidden');$('rxDoseCustom').value='';$('rxQuantity').value='';$('rxQuantity').dataset.manual='';
+ calculateRxQuantity();
+}
+function calculateRxQuantity(){
+ const dose=$('rxDose')?.value||'',freq=$('rxFrequency')?.value||'',dur=$('rxDuration')?.value||'';
+ const customDose=dose==='custom',customDur=dur==='custom';$('rxDoseCustom')?.classList.toggle('hidden',!customDose);$('rxDurationCustom')?.classList.toggle('hidden',!customDur);$('rxInstructionsCustom')?.classList.toggle('hidden',$('rxInstructions')?.value!=='Custom instruction');
+ const selected=$('medicineSelect')?.selectedOptions?.[0]?.textContent||'',d=customDose?Number.parseFloat($('rxDoseCustom')?.value):Number(dose),f={Once:1,OD:1,BD:2,TDS:3,QID:4}[freq],days=customDur?Number($('rxDurationCustom')?.value):Number(dur);
+ const q=$('rxQuantity'),note=$('rxCalcNote');if(!q)return;
+ const isTablet=/tablet/i.test(selected),isCapsule=/capsule/i.test(selected);
+ const isTopical=/gel|cream|ointment|topical|tube/i.test(selected),isInjection=/injection|ampoule|vial|vaccine/i.test(selected),isFluid=/normal saline|dextrose|ringer|dns|\\brl\\b|iv fluid/i.test(selected),isLiquid=/syrup|suspension|solution|expect|bottle/i.test(selected),isSachet=/sachet|ors/i.test(selected);
+ if(isTablet||isCapsule){
+   if(Number.isFinite(d)&&d>0&&f&&Number.isFinite(days)&&days>0){const total=d*f*days;q.value=String(Math.round(total*100)/100);q.dataset.manual='';note.textContent='Calculated issue quantity in '+(isTablet?'tablets':'capsules')+'. Confirm dose and dispensing unit.'}
+   else {q.value='';note.textContent='Select dose, frequency and duration to calculate tablet/capsule issue quantity.'}
+ }else if(isInjection||isTopical){
+   q.value='';q.dataset.manual='';note.textContent='Issue quantity left blank for vial/ampoule or tube. Enter only if the actual pack is to be issued and stock unit is confirmed.';
+ }else if(isFluid||isLiquid){
+   q.value='1';q.dataset.manual='';note.textContent='Default issue quantity: 1 bottle. Dose/volume is recorded separately. Verify actual pack size and stock unit.';
+ }else if(isSachet){
+   q.value='1';q.dataset.manual='';note.textContent='Default issue quantity: 1 sachet. Verify sachet unit in stock.';
+ }else{
+   q.value='';note.textContent='Enter issue quantity manually after confirming the dispensing unit.';
+ }
+}
+function addMedicine(){const el=$('medicineSelect');if(!el||el.value==='')return;const [src,idx]=el.value.split('|');if(src==='Solapur DHO'){alert('DHO stock is a reference catalogue only. Record a physical transfer into PHC Parite stock before dispensing.');return}const item=(invLoad()||{})[src]?.[Number(idx)];if(!item)return;const m=[item.name,'',item.form||'Other','','',src,item.quantity,item.unit,item.id];const p=current.patient;let caution=m[4]||'Check indication, contraindications and interactions.';if(!p.ageGroup||p.ageGroup!=='19–59 years')caution='Age band is not a typical adult: determine an age/weight-specific dose using an approved protocol; do not use an adult dose. '+caution;const dv=$('rxDose')?.value||'';const dose=dv==='custom'?($('rxDoseCustom')?.value.trim()||'')+((/injection|ampoule|vial|syrup|suspension|solution|expect/i.test(item.name+' '+item.unit))?' mL':''):($('rxDose')?.selectedOptions[0]?.textContent||'');const du=$('rxDuration')?.value||'';const duration=du==='custom'?($('rxDurationCustom')?.value.trim()+' days'):du?du+' days':'';const iv=$('rxInstructions')?.value||'';const instructions=iv==='Custom instruction'?($('rxInstructionsCustom')?.value.trim()||''):iv;current.plan.medicines=current.plan.medicines||[];current.plan.medicines.push({name:m[0],dose,route:$('rxRoute')?.value||'',frequency:$('rxFrequency')?.value||'',duration,quantity:($('rxQuantity')?.value.trim()||''),quantityUnit:dispenseUnitFor(item),instructions,caution,stockSource:m[5],reportedQty:m[6],stockUnit:m[7],stockDate:item.updatedAt||'not recorded',stockSource:src,stockItemId:item.id,stockUnit:item.unit,stockQuantityAtSelection:item.quantity,stockWarning:Number(item.quantity)<=0?'Zero / unverified stock: MO may prescribe, but verify physical availability before dispensing; no stock deduction will occur.':(item.unlisted?'Manually added / not confirmed in uploaded stock catalogue; verify before dispensing.':'')});current.plan.note=$('planNote')?.value||current.plan.note||'';current.plan.nonDrug=$('nonDrugPlan')?.value||current.plan.nonDrug||'';openModal('plan')}
+function removeMedicine(i){if($('planNote'))current.plan.note=$('planNote').value;if($('nonDrugPlan'))current.plan.nonDrug=$('nonDrugPlan').value;current.plan.medicines=(current.plan.medicines||[]).filter((m,j)=>j!==i);openModal('plan')}
+function applyModal(){if(modalKind==='patient'){current.patient.name=$('patientName')?.value.trim()||'';current.patient.fatherSpouse=$('fatherSpouse')?.value.trim()||'';current.patient.crNo=$('patientCrNo')?.value.trim()||'';current.patient.mobile=$('patientMobile')?.value.trim()||'';current.patient.age=$('ageInput')?.value||'';current.patient.villageOther=$('patientVillageOther')?.value.trim()||'';if(current.patient.village==='Other'&&current.patient.villageOther)current.patient.village=current.patient.villageOther}
+if(modalKind==='history'){let n=$('historyNote');if(n)current.history.note=n.value}
+if(modalKind==='vitals'){['temp','pulse','rr','spo2','sbp','dbp','weight'].forEach(k=>{let e=$('v_'+k);if(e&&e.value)current.vitals[k]=e.value})}
+if(modalKind==='exam'){current.exam.note=$('examNote')?.value||''}
+if(modalKind==='plan'){current.plan.woundCare=document.querySelector('[data-single=\"woundCare\"].on')?.dataset.val||current.plan.woundCare||'';}
+if(modalKind==='assessment'){const sel=$('diagnosisSelect');current.assessment.diagnosis=sel?.value||'';current.assessment.icd10=DX_CATALOG.find(d=>d[0]===current.assessment.diagnosis)?.[1]||''}
+if(modalKind==='plan'){current.plan.note=$('planNote')?.value||'';current.plan.nonDrug=$('nonDrugPlan')?.value||'';}
+closeModal();render()}
+function closeModal(){$('modalback').classList.remove('open')}
+function differentials(){let h=current.history,c=current.complaints,out=[];if(c.includes('Fever')){if(h.rash==='Yes'||h.bodyache==='Yes'||h.feverPattern==='Intermittent')out.push('Arboviral illness (e.g., dengue/chikungunya) – assess warning signs and local epidemiology');if(h.chills==='Yes')out.push('Malaria and other febrile infections – assess exposure and test according to local protocol');if(h.urinary==='Yes')out.push('Urinary tract infection / pyelonephritis');if(h.cough==='Yes')out.push('Respiratory infection, including pneumonia depending on examination');if(h.gi==='Yes')out.push('Gastrointestinal infection / enteric causes depending on duration and findings');if(['Mosquito exposure','Recent travel','Sick contact'].includes(h.exposure))out.push('Exposure-related infections guided by travel, season and district epidemiology');if(!out.length)out.push('Undifferentiated fever – continue focused assessment and use local fever protocol')}if(c.includes('Breathlessness'))out.push('Cardiorespiratory causes require severity assessment and oxygen saturation');return out}
+function alerts(){let a=[],v=current.vitals,h=current.history;if(v.spo2&&+v.spo2<94)a.push('Low SpO₂ entered: promptly reassess, verify reading and evaluate/referral according to clinical condition.');if(v.sbp&&+v.sbp<90)a.push('Low systolic BP entered: assess circulation/shock and urgent escalation.');if(h.rash==='Yes'||h.bodyache==='Yes'||h.vomitingPersistent==='Yes'||h.abdominalPain==='Yes')a.push('Rash/body ache: assess for bleeding, abdominal pain, persistent vomiting, lethargy and other dengue warning signs.');if(['Reduced intake','Reduced urine','Both reduced','Unable to take orally'].includes(h.intake))a.push('Reduced intake/urine output: assess hydration, perfusion and renal risk.');if(h.pregnancy==='Yes')a.push('Pregnancy possible/known: use pregnancy-specific assessment and medication safety review.');if(['0–5 years','6–12 years'].includes(current.patient.ageGroup))a.push('Child selected: use age-specific IMNCI/paediatric danger-sign and vital-sign assessment.');return a}
+function render(){let p=current.patient;$('patientSummary').textContent=`${p.ageGroup||'Age group not selected'} · ${p.sex||'Sex not selected'}${p.age?' · '+p.age+' years':''}${p.village?' · '+p.village:''}`;$('complaintSummary').textContent=current.complaints.join(' · ')||'No complaint selected';$('historySummary').textContent=Object.entries(current.history).filter(([k,v])=>k!=='note'&&v).map(([k,v])=>k+': '+v).join(' · ')||'No history answers selected';$('vitalsSummary').textContent=Object.entries(current.vitals).map(([k,v])=>k.toUpperCase()+': '+v).join(' · ')||'No vitals recorded';$('examSummary').textContent=(current.exam.status||'Status not selected')+' · General assessed: '+((current.exam.generalItems||[]).length)+' · Focused assessed: '+((current.exam.focusedItems||[]).length); $('assessmentSummary').textContent=((current.assessment.diagnosis?current.assessment.diagnosis+' · ICD-10 '+(current.assessment.icd10||'pending'):'MO diagnosis pending'))+' · Differential prompts: '+differentials().length+' · Tests selected: '+(current.assessment.tests||[]).length;$('planSummary').textContent=(current.plan.disposition||'Disposition pending')+' · '+(current.plan.followup||'Follow-up pending')+' · Medicines: '+((current.plan.medicines||[]).length)+(current.plan.nonDrug?' · Non-drug plan entered':'');let a=alerts();$('alerts').innerHTML=a.map(x=>`<div class="notice danger">${x}</div>`).join('');let n=[p.sex,p.ageGroup,current.complaints.length,current.history&&Object.keys(current.history).length,Object.keys(current.vitals).length,current.exam.status,current.assessment.diagnosis,current.plan.disposition].filter(Boolean).length;$('completion').style.width=(n/8*100)+'%';$('completionText').textContent=n+' of 8 consultation elements recorded'}
+function saveConsult(){let r=records();current.id=current.id||Date.now().toString();current.updated=new Date().toISOString();let i=r.findIndex(x=>x.id===current.id);if(i>=0)r[i]=structuredClone(current);else r.unshift(structuredClone(current));persist(r);deductPrescriptionStock();let j=r.findIndex(x=>x.id===current.id);if(j>=0){r[j]=structuredClone(current);persist(r)}alert('Saved locally. PHC stock deducted once for eligible prescription quantities. DHO reference stock is not deducted.');refreshHome();render()}
+function noteText(){let p=current.patient;return `PHC CLINICAL ASSISTANT – QUICK OPD NOTE\nDEMO / TEST DATA ONLY\nAge group: ${p.ageGroup}; Sex: ${p.sex}; Age: ${p.age||'Not entered'}\nComplaints: ${current.complaints.join(', ')||'Not recorded'}\nHistory: ${Object.entries(current.history).map(([k,v])=>k+': '+v).join('; ')}\nVitals: ${Object.entries(current.vitals).map(([k,v])=>k+': '+v).join('; ')}\nExamination status: ${current.exam.status||'Not recorded'}\nGeneral examination assessed: ${(current.exam.generalItems||[]).join(', ')}\nFocused/systemic examination assessed: ${(current.exam.focusedItems||[]).join(', ')}\nSystemic findings: ${Object.entries(current.exam.systemFindings||{}).map(([k,v])=>k+': '+v).join('; ')}\nExam note: ${current.exam.note||'-'}\nDifferential prompts: ${differentials().join('; ')}\nMO working diagnosis: ${current.assessment.diagnosis||'Pending'}; ICD-10: ${current.assessment.icd10||'Not selected'}\nMedicines (MO selected): ${(current.plan.medicines||[]).map(m=>`${m.name} | Dose: ${m.dose||'Pending'} | Route: ${m.route||'Pending'} | Frequency: ${m.frequency||'Pending'} | Duration: ${m.duration||'Pending'} | Quantity: ${m.quantity||'Pending'} | Instructions: ${m.instructions||'-'} | CAUTION: ${m.caution}`).join(' | ')||'None selected'}\nMO-selected tests: ${(current.assessment.tests||[]).join(', ')}\nDisposition: ${current.plan.disposition||'Pending'}; Follow-up: ${current.plan.followup||'Pending'}\nWound care: ${current.plan.woundCare||'-'}\nNon-drug treatment/procedures: ${current.plan.nonDrug||'-'}\nPlan/advice: ${current.plan.note||'-'}\nClinician must verify all findings, diagnosis and management. Prototype not clinically validated. Drug catalogue is based on PHC_Drugwise_Prescription_Reference_FULL_A4.pdf (stock reports dated 19-Aug-2024); current stock and guidelines must be verified.`}
+function rxEsc(v){return escapeHtml(String(v??''))}
+function rxSection(title,content){return content?`<section class="rx-section"><h3>${rxEsc(title)}</h3><div>${content}</div></section>`:''}
+function historyLabel(k){const m={feverOnset:'Fever duration',feverPattern:'Fever pattern',chills:'Chills / rigors',antipyretic:'Response to antipyretics',rash:'Rash / petechiae / bleeding',bodyache:'Body ache / retro-orbital pain',vomitingPersistent:'Persistent vomiting',abdominalPain:'Severe abdominal pain',lethargy:'Lethargy / restlessness / altered sensorium',cough:'Cough / respiratory symptoms',urinary:'Urinary symptoms',gi:'Gastrointestinal symptoms',exposure:'Relevant exposure',intake:'Oral intake / urine output',respDuration:'Respiratory symptom duration',breathRest:'Breathlessness at rest',orthopnoea:'Orthopnoea',chestPain:'Chest pain',sputum:'Cough type / sputum',wheeze:'Wheeze',soreThroat:'Sore throat / swallowing',abdOnset:'Abdominal pain duration',abdSite:'Pain location',abdNature:'Pain character',abdSeverity:'Pain severity',abdVomiting:'Vomiting with pain',abdBlood:'Blood in stool / black stool',abdBowel:'Bowel movement',giFrequency:'Episode frequency',giBlood:'Blood in vomit / stool',giDehydration:'Dehydration symptoms',giIntake:'Oral fluid tolerance',urinaryType:'Urinary symptoms',urinaryFever:'Fever / chills with urinary symptoms',urinaryPreg:'Pregnancy possibility',headacheOnset:'Headache onset',headacheSeverity:'Headache severity',headacheNeuro:'Neurological symptoms',headacheFever:'Fever / neck stiffness / rash',headacheTrauma:'Recent head injury',dizzyType:'Type of giddiness',dizzyTrigger:'Trigger',dizzyNeuro:'Neurological symptoms',dizzyChest:'Chest pain / palpitations',weakDuration:'Weakness duration',weakPattern:'Weakness pattern',weakAssociated:'Associated symptoms'};return m[k]||k.replace(/([A-Z])/g,' $1').replace(/^./,x=>x.toUpperCase())}
+function prescriptionHTML(){const p=current.patient||{},v=current.vitals||{},e=current.exam||{},a=current.assessment||{},pl=current.plan||{},meds=pl.medicines||[];const date=new Date().toLocaleDateString('en-IN'),time=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});const without=$('withoutHeader')?.checked;const head=without?'':`<div class="rx-head"><h2>PRIMARY HEALTH CENTRE PARITE</h2><div class="rx-sub">At Post Parite, Taluka Madha, District Solapur</div></div>`;
+const meta=[['Name',p.name],['CR No.',p.crNo],['Age / Gender',[p.age?`${p.age} years`:p.ageGroup,p.sex].filter(Boolean).join(' / ')],['Father / Spouse',p.fatherSpouse],['Visit Date',date],['Mobile',p.mobile],['Village',p.village||p.villageOther]].filter(([k,val])=>val).map(([k,val])=>`<div><b>${rxEsc(k)}</b><span>${rxEsc(val)}</span></div>`).join('');
+const complaints=(current.complaints||[]).join(', ');const h=Object.entries(current.history||{}).filter(([k,val])=>val&&k!=='note').map(([k,val])=>`${historyLabel(k)} — ${val}`).join('. ');const history=[h,current.history?.note].filter(Boolean).join('. ');const vitals=Object.entries(v).filter(([k,val])=>val!==''&&val!=null).map(([k,val])=>`${k.toUpperCase()}: ${val}`).join(' · ');const examParts=[];if(e.status)examParts.push(`General status: ${e.status}`);if((e.generalItems||[]).length)examParts.push(`General examination: ${[...new Set(e.generalItems)].join(', ')}`);if((e.focusedItems||[]).length)examParts.push(`Focused / systemic examination: ${[...new Set(e.focusedItems)].join(', ')}`);if(e.systemFindings)Object.entries(e.systemFindings).filter(([k,val])=>val).forEach(([k,val])=>examParts.push(`${k}: ${val}`));if(e.note)examParts.push(`Findings: ${e.note}`);const dx=a.diagnosis?`${a.diagnosis}${a.icd10?' ('+a.icd10+')':''}`:'';
+const rx=meds.length?meds.map((m,i)=>{const details=[m.dose,m.route,m.frequency,m.duration,m.quantity?`Issue quantity: ${m.quantity}${m.quantityUnit?' '+m.quantityUnit:''}`:''].filter(Boolean).join(' · ');return `<div class="rx-medicine"><b>${i+1}. ${rxEsc(m.name)}</b>${details?`<br>${rxEsc(details)}`:''}${m.instructions?`<br><span class="rx-muted">Instructions: ${rxEsc(m.instructions)}</span>`:''}</div>`}).join(''):'No medicines selected';const tests=(a.tests||[]).join(', ');const advice=[pl.woundCare,pl.nonDrug,pl.note].filter(Boolean).map(rxEsc).join('<br>');const follow=[pl.disposition,pl.followup].filter(Boolean).join(' · ');
+return `${head}<div class="rx-title">OPD PRESCRIPTION</div>${meta?`<div class="rx-meta">${meta}</div>`:''}${rxSection('Chief complaints',complaints)}${rxSection('History',history)}${rxSection('Vitals',vitals)}${rxSection('Examination',[...new Set(examParts)].map(rxEsc).join('<br>'))}${rxSection('Diagnosis',dx)}<section class="rx-section"><h3>Rx</h3>${rx}</section>${rxSection('Investigations',tests)}${rxSection('Advice / Non-drug management',advice)}${rxSection('Disposition / Follow-up',follow)}<div class="rx-sign"><div><b>Date & Time</b><br>${rxEsc(date)} · ${rxEsc(time)}</div><div style="text-align:right"><b>Signature of Medical Officer</b><br><br>PHC Parite</div></div>`}
+function renderPrescriptionPreview(){const html=prescriptionHTML();$('prescriptionPreview').innerHTML=html;$('printPrescriptionContent').innerHTML=html}
+function previewNote(){$('withoutHeader').checked=false;renderPrescriptionPreview();$('noteBack').classList.add('open')}
+function printPrescription(){renderPrescriptionPreview();$('noteBack').classList.remove('open');window.print()}
+function refreshHome(){let r=records(),today=new Date().toISOString().slice(0,10);$('totalCount').textContent=r.length;$('todayCount').textContent=r.filter(x=>(x.updated||'').slice(0,10)===today).length;$('homeSummary').textContent=current.complaints.length?current.complaints.join(', '):'No consultation started.';$('recent').innerHTML=r.slice(0,4).map(x=>`<div class="summaryline">${(x.patient?.ageGroup||'Patient')} · ${(x.complaints||[]).join(', ')||'No complaint'} · ${new Date(x.updated).toLocaleString()}</div>`).join('')||'No saved demo records.'}
+function renderRecords(){$('allRecords').innerHTML=records().map(x=>`<div class="summaryline"><b>${x.patient?.ageGroup||'Patient'} · ${x.patient?.sex||''}</b><br>${(x.complaints||[]).join(', ')}<br><button onclick="loadRecord('${x.id}')">Open</button> <button onclick="deleteRecord('${x.id}')">Delete</button></div>`).join('')||'No saved demo records.'}
+function loadRecord(id){let r=records().find(x=>x.id===id);if(r){current=structuredClone(r);render();go('consult')}}
+function deleteRecord(id){persist(records().filter(x=>x.id!==id));renderRecords();refreshHome()}
+function renderReports(){let r=records();$('reportSummary').textContent=`Total saved demo consultations: ${r.length}. Records are stored only in this browser profile.`}
+function exportData(){let blob=new Blob([JSON.stringify({app:'PHC Clinical Assistant TapFirst',version:'3.1',records:records(),inventory:invLoad(),movements:movements()},null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='phc-clinical-assistant-backup.json';a.click();URL.revokeObjectURL(a.href)}
+function importData(e){let f=e.target.files[0];if(!f)return;let rd=new FileReader();rd.onload=()=>{try{let o=JSON.parse(rd.result);if(!Array.isArray(o.records))throw Error('Invalid backup');persist(o.records);alert('Backup imported');refreshHome()}catch(err){alert('Import failed: '+err.message)}};rd.readAsText(f)}
+function clearDemo(){if(confirm('Delete all local demo records? Export a backup first if needed.')){persist([]);refreshHome();renderRecords()}}
+initInventory();refreshHome();
+if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('./service-worker.js').catch(function (err) { console.warn('Offline support registration failed:', err); }); }); }
+</script></body></html>
